@@ -1,37 +1,50 @@
-import React,{useContext, useEffect} from 'react';
-import { Container, Col, Row } from 'react-bootstrap';
-import { NavLink, useLocation,useNavigate } from 'react-router-dom';
-import { registration, login } from '../https/userAPI';
+import React, { useContext, useEffect, useState } from 'react';
+import { Container, Spinner } from 'react-bootstrap';
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
 import ItemsMain from '../components/ItemsMain';
 import ItemsList from '../components/ItemsList';
-import { fetchTypes,fetchItems } from '../https/itemAPI';
-const Shop = observer(() =>{
-    const {item}= useContext(Context);
-    const selectedType= item.selectedType
-    useEffect(()=>{
-        
-        fetchTypes().then(data=>item.setTypes(data))
-        fetchItems().then(data=>item.setItems(data.rows))
-    },[])
+import Pages from '../components/Pages';
+import { fetchTypes, fetchItems } from '../https/itemAPI';
+
+const Shop = observer(() => {
+    const { item } = useContext(Context);
+    let isSelectedType = !(Object.keys(item.selectedType).length === 0);
+    const [loadingTypes, setLoadingTypes] = useState(true);
+    useEffect(() => {
+        setLoadingTypes(true);
+        fetchTypes()
+            .then((typesData) => {
+                item.setTypes(typesData);
+            })
+            .finally(() => setLoadingTypes(false));
+    }, []);
+    if (loadingTypes ) {
+            return (
+                <div 
+                    className="d-flex justify-content-center align-items-center" 
+                    style={{ height: '100vh' }}
+                >
+                    <Spinner animation="grow" style={{ transform: 'scale(2)' }} />
+                </div>
+            );
+    }
+
     return (
         <Container style={{ paddingTop: '80px' }}>
-            {Object.keys(selectedType).length === 0 ? (
+            {isSelectedType ? (
                 <>
-                    {console.log("Выбран пустой тип")}
-                    <ItemsMain />
+                    <ItemsList type={item.selectedType} />
+                    <Pages />
                 </>
+                
             ) : (
                 <>
-                    {console.log(selectedType.name + " выбран")}
-                    <ItemsList type={selectedType}/>
+                    <ItemsMain />
                 </>
-    )}
-</Container>
-
-    
-    )
+            )}
+        </Container>
+    );
 });
 
 export default Shop;

@@ -1,15 +1,32 @@
-import React, { useContext } from 'react';
-import { Row } from "react-bootstrap";
+import React, { useContext,useState,useEffect } from 'react';
+
+import { Row,Spinner } from "react-bootstrap";
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
-
+import { fetchTypes, fetchItems } from '../https/itemAPI';
 import ItemsHorScroll from './ItemsHorScroll';
 
 const ItemsMain = observer(() => {
     const { item } = useContext(Context);
-
-    if (!item || !item.types) {
-        return <div>Данных нет</div>; 
+    const [loadingItems, setLoadingItems] = useState(true);
+    useEffect(() => {
+        setLoadingItems(true);
+        fetchItems(null, 1, item.onMain + 1).then(data => {
+            item.setItems(data.rows);
+            item.setTotalCount(data.count);
+        }).finally(() => setLoadingItems(false));
+    
+    }, []);
+    
+    if (loadingItems ) {
+        return (
+            <div 
+                className="d-flex justify-content-center align-items-center" 
+                style={{ height: '100vh' }}
+            >
+                <Spinner animation="grow" style={{ transform: 'scale(2)' }} />
+            </div>
+        );
     }
 
     return (

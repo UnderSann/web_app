@@ -1,6 +1,6 @@
-import React, { useContext } from 'react';
-import { Button, Card } from 'react-bootstrap';
-
+import React, { useContext,useEffect, useState } from 'react';
+import { Button, Card,Spinner } from 'react-bootstrap';
+import { fetchItems } from '../https/itemAPI';
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
 import ItemPreveiw from './ItemPreveiw';
@@ -8,72 +8,41 @@ import { List } from 'react-bootstrap-icons';
 
 const ItemsHorScroll = observer(({ type }) => {
     const { item } = useContext(Context);
+    const [localItems, setLocalItems] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    if (!item || !item.items) {
-        return (
-            <div className="p-3 text-muted">
-                В настоящее время нет такого товара
-            </div>
-        );
-    }
+    useEffect(() => {
+        if (type.id !== -1) {  // Загружаем только если это не "Все товары"
+            setLoading(true);
+            fetchItems(type.typeId, 1, item.onMain + 1).then(data => {
+                setLocalItems(data.rows);
+            }).finally(() => setLoading(false));
+        } else {
+            setLocalItems(item.items); // "Все товары" берём из общего списка
+            setLoading(false);
+        }
+    }, [type]);
 
-    const toItemsList = () => {
-        item.setSelectedType(type);
-    };
-
-    // Функция для обработки скролла
-    const onScroll = (e) => {
-        e.preventDefault();
-        e.currentTarget.scrollLeft += e.deltaY;
-    };
-
-    // Инициализируем allItems как массив
-    let allItems = [];
-
-    if (type.id === -1) { // Если это секция "Все товары"
-        allItems = item.items;
-    } else {
-        allItems = item.items.filter(i => i.typeId === type.typeId);
-    }
-
-    const displayedItems = allItems.slice(0, 6);
-
+    if (loading) return <Spinner animation="grow" style={{ transform: 'scale(1.5)' }} />;
+    
     return (
         <div key={type.id} className='mb-3'>
-            <Card 
-                className="p-3 d-flex" 
-                style={{ cursor: "pointer", whiteSpace: "normal", wordWrap: "break-word" }}
-                onClick={toItemsList}
-            >
+            <Card onClick={() => item.setSelectedType(type)} className="p-3 d-flex">
                 <div className="d-flex align-items-center">
-                    <List className="me-2" /> {/*Иконка*/}
-                    {type.name} 
+                    <List className="me-2" />
+                    {type.name}
                 </div>
             </Card>
 
-            <div 
-                className="d-flex overflow-auto mt-1"
-                style={{ whiteSpace: "nowrap" }}
-                onMouseEnter={(e) => e.currentTarget.addEventListener('wheel', onScroll, { passive: false })}
-                onMouseLeave={(e) => e.currentTarget.removeEventListener('wheel', onScroll)}
-            >
-                {displayedItems.length > 0 ? 
-                    displayedItems.map(item => (
-                        <ItemPreveiw key={item.id} item={item} />
-                    ))
-                : (
-                    <div className="p-3 text-muted">
-                        В настоящее время нет такого товара
-                    </div>
+            <div className="d-flex overflow-auto mt-1" style={{ whiteSpace: "nowrap" }}>
+                {localItems.length > 0 ? (
+                    localItems.map(item => <ItemPreveiw key={item.id} item={item} />)
+                ) : (
+                    <div className="p-3 text-muted">В настоящее время нет такого товара</div>
                 )}
                 
-                {allItems.length > 6 && (
-                    <Button 
-                        variant="outline-dark"
-                        className="m-3" 
-                        style={{ minWidth: 100, minHeight: 300, cursor: "pointer", whiteSpace: "normal", wordWrap: "break-word", textAlign: "center" }}
-                        onClick={toItemsList}
-                    >
+                {localItems.length > item.onMain && (
+                    <Button variant="outline-dark" onClick={() => item.setSelectedType(type)} className="m-3">
                         Показать больше
                     </Button>
                 )}

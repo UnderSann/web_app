@@ -1,7 +1,9 @@
 import React from 'react';
-import { Card, Image } from 'react-bootstrap';
+import { Button, Card, Image} from 'react-bootstrap';
+import { NavLink } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-
+import { ITEM_ROUTE } from '../utils/consts';
+import { Cart } from 'react-bootstrap-icons';
 const ItemPreveiw = observer(({ item }) => {
     return (
         <Card 
@@ -14,6 +16,7 @@ const ItemPreveiw = observer(({ item }) => {
                 whiteSpace: "normal",
                 wordWrap: "break-word"
             }}
+            as={NavLink} to={ITEM_ROUTE+"/"+item.id}
             border='dark'
         >
             {/* Изображение по центру */}
@@ -33,6 +36,10 @@ const ItemPreveiw = observer(({ item }) => {
                     {item.price+" BYN"} 
                 </div>
             </div>
+            <Button variant="outline-dark" className="m-2">
+                    <Cart/>
+            </Button>
+
         </Card>    
     );
 });

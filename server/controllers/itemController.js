@@ -61,14 +61,18 @@ class ItemController {
         return res.json(items)
     }
 
-    async getOne(req, res) {
-       const {id} = req.params
-       const item = await Item.findOne({
-        where: { id },
-        include: [{ model: ItemInfo, as: 'info' }]
-        },
-    )
-       return res.json(item)
+    async getOne(req, res,next) {
+        try {
+            const {id} = req.params
+            const item = await Item.findOne({
+            where: { id },
+            include: [{ model: ItemInfo, as: 'info' }]
+            },
+        )
+         return res.json(item)
+        } catch(e){
+            next(ApiError.badRequest(e.message));
+        }
     }
     async deleteOne(req, res, next) {
         try {

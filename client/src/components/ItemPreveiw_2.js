@@ -1,7 +1,9 @@
 import React from 'react';
-import { Card, Image } from 'react-bootstrap';
+import { Card, Image} from 'react-bootstrap';
+import { NavLink } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-
+import { ITEM_ROUTE } from '../utils/consts';
+import { Cart } from 'react-bootstrap-icons';
 const ItemPreview_2 = observer(({ item }) => {
   return (
     <Card
@@ -15,6 +17,7 @@ const ItemPreview_2 = observer(({ item }) => {
         whiteSpace: "normal",
         wordWrap: "break-word"
       }}
+      as={NavLink} to={ITEM_ROUTE+"/"+item.id}
       border="dark"
     >
       <div className="d-flex flex-row align-items-start w-100">

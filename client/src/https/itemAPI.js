@@ -25,6 +25,6 @@ export const fetchItems = async (typeId,page,limit) =>{
 }
 
 export const fetchOneItem = async (id) =>{
-    const {data} = await $host.get('api/item/'+id)
+    const {data} = await $host.get(`api/item/${id}`)
     return data
 }

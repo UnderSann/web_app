@@ -76,7 +76,7 @@ class ItemController {
     }
     async deleteOne(req, res, next) {
         try {
-            const { id } = req.params;
+            const { id } = req.body;
     
             // Находим объект по id, включая связанную информацию
             const item = await Item.findOne({

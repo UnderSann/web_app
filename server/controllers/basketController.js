@@ -3,26 +3,33 @@ const ApiError = require('../error/ApiError');
 
 class BasketController {
     // Получить корзину пользователя
-    async getBasket(req, res,next) {
+    async getBasket(req, res, next) {
         try {
             let { limit, page } = req.query;
-            const {userId} = req.params
+            const { userId } = req.params;
+    
             let basket = await Basket.findOne({ where: { userId } });
+            if (!basket) {
+                return res.json({ rows: [], count: 0 }); 
+            }
+    
             page = page || 1;
             limit = limit || 10;
-            let offset = page * limit - limit;
+            let offset = (page - 1) * limit;
+    
             const basketItems = await BasketItem.findAndCountAll({
                 where: { basketId: basket.id },
                 limit,
                 offset,
-                include: [{ model: Item }] // Подгружаем информацию о товаре
+                include: [{ model: Item }]
             });
-            
+    
             return res.json(basketItems);
         } catch (e) {
             next(ApiError.badRequest(e.message));
         }
     }
+    
     
 
     // Добавить товар в корзину

@@ -4,7 +4,7 @@ import { Container,Row,Spinner } from "react-bootstrap";
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
 import {fetchOneItem } from '../https/itemAPI';
-
+import Loading from '../components/Loading'
 import ImgHorScroll from '../components/ImgHorScroll';
 
 const ItemPage = observer(({}) => {
@@ -21,12 +21,7 @@ const ItemPage = observer(({}) => {
     
     if (loadingItem ) {
         return (
-            <div 
-                className="d-flex justify-content-center align-items-center" 
-                style={{ height: '100vh' }}
-            >
-                <Spinner animation="grow" style={{ transform: 'scale(2)' }} />
-            </div>
+            <Loading/>
         );
     }
     return (

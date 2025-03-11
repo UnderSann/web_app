@@ -6,17 +6,21 @@ import { observer } from 'mobx-react-lite';
 import { Spinner } from 'react-bootstrap';
 import { Context } from './index.js';
 import { check } from './https/userAPI';
-
+import { NavLink, useLocation,useNavigate } from 'react-router-dom';
 
 const App = observer(() => {
   const {user} = useContext(Context)
   const [loading,setLoading]=useState(true)
-
   useEffect( ()=>{
+    if (user  !== undefined) {
     check().then(data =>{
-      user.setUser(true)
+      user.setUser(data)
       user.setIsAuth(true)
     }).finally(()=>setLoading(false))
+  }
+  else{
+    setLoading(false)
+  }
   },[])
   if(loading){
     return (

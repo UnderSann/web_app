@@ -9,6 +9,7 @@ import ItemPreveiw_2 from './ItemPreveiw_2';
 import { fetchTypes, fetchItems } from '../https/itemAPI';
 import { ArrowLeft } from 'react-bootstrap-icons';
 import { SHOP_ROUTE, LOGIN_ROUTE } from '../utils/consts';
+import Loading from './Loading'
 const ItemsList = observer(({ type }) => {
     const { item } = useContext(Context);
     const [loadingItems, setLoadingItems] = useState(true);
@@ -34,12 +35,7 @@ const ItemsList = observer(({ type }) => {
 
     if (loadingItems) {
         return (
-            <div
-                className="d-flex justify-content-center align-items-center"
-                style={{ height: '100vh' }}
-            >
-                <Spinner animation="grow" style={{ transform: 'scale(2)' }} />
-            </div>
+            <Loading/>
         );
     }
 
@@ -58,7 +54,7 @@ const ItemsList = observer(({ type }) => {
         <Row className="d-flex justify-content-center mt-1">
             {allItems.length > 0 ?
                 allItems.map(item => (
-                    <ItemPreveiw_2 item={item} key={item.id} />
+                    <ItemPreveiw_2 item={item} isBasket={false} key={item.id} />
                 ))
                 : (
                     <div className="p-3 text-muted">

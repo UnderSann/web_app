@@ -5,7 +5,7 @@ import { Context } from '..';
 import { observer } from 'mobx-react-lite';
 import { fetchTypes, fetchItems } from '../https/itemAPI';
 import ItemsHorScroll from './ItemsHorScroll';
-
+import Loading from './Loading'
 const ItemsMain = observer(() => {
     const { item } = useContext(Context);
     const [loadingItems, setLoadingItems] = useState(true);
@@ -20,12 +20,7 @@ const ItemsMain = observer(() => {
     
     if (loadingItems ) {
         return (
-            <div 
-                className="d-flex justify-content-center align-items-center" 
-                style={{ height: '100vh' }}
-            >
-                <Spinner animation="grow" style={{ transform: 'scale(2)' }} />
-            </div>
+            <Loading/>
         );
     }
 

@@ -1,8 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 
-export default class ItemStore {
+export default class BasketStore {
     constructor() {
-        this._userId = {};
         this._basketItems = [];
         this._page = 1;
         this._totalCount = 0;
@@ -10,26 +9,14 @@ export default class ItemStore {
         makeAutoObservable(this);
     }
 
-    setTypes(types) {
-        this._types = types;
+    setBasketItem(basketItems) {
+        this._basketItems = basketItems;
     }
 
-    setItems(items) {
-        this._items = items;
-    }
-
-    addItem(item) {
-        this._items.push(item);
-    }
-
-    setSelectedType(type) {
-        if (this._selectedType !== type) {
-            this.setPage(1);  // Переключаемся на первую страницу
-            this._selectedType = type;
-        }
+    addBasketItem(basketItem) {
+        this._basketItems.push(basketItem);
     }
     
-
     setPage(page) {
         this._page = page;
     }
@@ -42,17 +29,13 @@ export default class ItemStore {
         this._limit = limit;
     }
 
-    get types() {
-        return this._types;
+    
+
+    get basketItems() {
+        return this._basketItems;
     }
 
-    get items() {
-        return this._items;
-    }
-
-    get selectedType() {
-        return this._selectedType;
-    }
+ 
 
     get page() {
         return this._page;
@@ -64,8 +47,5 @@ export default class ItemStore {
 
     get limit() {
         return this._limit;
-    }
-    get onMain() {
-        return this._onMain;
     }
 }

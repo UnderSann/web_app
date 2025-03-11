@@ -6,13 +6,14 @@ import { observer } from 'mobx-react-lite';
 import ItemPreveiw from './ItemPreveiw';
 import { List } from 'react-bootstrap-icons';
 import { ITEM_ROUTE } from '../utils/consts';
+import Loading from './Loading'
 
 const ItemsHorScroll = observer(({ type }) => {
     const { item } = useContext(Context);
     const [localItems, setLocalItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const scrollRef = useRef(null);
-
+    
     useEffect(() => {
         if (type.id !== -1) {  // Загружаем только если это не "Все товары"
             setLoading(true);
@@ -45,7 +46,7 @@ const ItemsHorScroll = observer(({ type }) => {
         };
     }, []);
 
-    if (loading) return <Spinner animation="grow" style={{ transform: 'scale(1.5)' }} />;
+    if (loading) return <Loading/>;
     
     return (
         <div key={type.id} className='mb-3'>

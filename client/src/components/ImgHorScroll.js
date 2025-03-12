@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 
 const ItemsHorScroll = observer(({ item }) => {
     const scrollRef = useRef(null);
-    const images = Array.isArray(item.img) ? item.img : [item.img]; // Убедитесь, что это массив
+    const images = Array.isArray(item.img) ? item.img : [item.img];
 
     const handleWheelScroll = (e) => {
         if (scrollRef.current && scrollRef.current.scrollWidth > scrollRef.current.clientWidth) {

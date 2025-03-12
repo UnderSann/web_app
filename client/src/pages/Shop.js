@@ -10,10 +10,12 @@ import Loading from '../components/Loading'
 const Shop = observer(() => {
     const { item } = useContext(Context);
     const { user } = useContext(Context);
+    const { basket } = useContext(Context);
     let isSelectedType = !(Object.keys(item.selectedType).length === 0);
     const [loadingTypes, setLoadingTypes] = useState(true);
     useEffect(() => {
         setLoadingTypes(true);
+        basket.setPage(1)
         fetchTypes()
             .then((typesData) => {
                 item.setTypes(typesData);
@@ -31,7 +33,7 @@ const Shop = observer(() => {
             {isSelectedType ? (
                 <>
                     <ItemsList type={item.selectedType} />
-                    <Pages />
+                    <Pages item={item}/>
                 </>
                 
             ) : (

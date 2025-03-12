@@ -6,6 +6,7 @@ export default class BasketStore {
         this._page = 1;
         this._totalCount = 0;
         this._limit = 5;
+        this._isDel=0;//Доделай!!
         makeAutoObservable(this);
     }
 
@@ -28,7 +29,6 @@ export default class BasketStore {
     setLimit(limit) {
         this._limit = limit;
     }
-
     
 
     get basketItems() {

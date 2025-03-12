@@ -7,8 +7,7 @@ import { observer } from 'mobx-react-lite';
 
 import ItemsHorScroll from './ItemsHorScroll';
 
-const Pages = observer(() => {
-  const {item}=useContext(Context)
+const Pages = observer(({item}) => {
   const pageCount=Math.ceil(item.totalCount / item.limit)
   console.log("ЧИСЛО элементов",item.totalCount)
   const pages=[]

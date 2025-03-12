@@ -8,6 +8,8 @@ import Loading from '../components/Loading'
 import { fetchBasket } from '../https/basketAPI';
 import ItemsList from '../components/ItemsList';
 import ItemPreveiw_2 from '../components/ItemPreveiw_2';
+import Pages from '../components/Pages';
+
 const Basket =  observer(() =>{
     const { basket } = useContext(Context);
     const {user}=useContext(Context)
@@ -20,7 +22,7 @@ const Basket =  observer(() =>{
             basket.setBasketItem(data.rows);
             basket.setTotalCount(data.count);
         }).finally(() => setLoadingItems(false));
-    }, [basket.page, basket.selectedType]);
+    }, [basket.page]);
     
     if (loadingItems ) {
         return (<Loading/>);
@@ -32,7 +34,9 @@ const Basket =  observer(() =>{
                 item={basketItem.item}
                 quantity={basketItem.quantity}/>
           ))}
+        <Pages item={basket}/>
         </Container>
+        
     );
 });
       

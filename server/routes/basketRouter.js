@@ -5,6 +5,6 @@ const BasketController = require('../controllers/basketController')
 router.post('/', BasketController.addToBasket);
 router.get('/:userId', BasketController.getBasket);
 router.delete('/remove', BasketController.removeFromBasket);
-router.delete('/remove', BasketController.clearBasket);
+router.delete('/clear', BasketController.clearBasket);
 
 module.exports =router

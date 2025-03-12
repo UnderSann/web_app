@@ -62,22 +62,35 @@ class BasketController {
     // Удалить один товар из корзины
     async removeFromBasket(req, res, next) {
         try {
-            const { userId, itemId } = req.body;
-
+            const { userId, itemId, page = 1, limit = 10 } = req.body;
+    
             const basket = await Basket.findOne({ where: { userId } });
             if (!basket) {
-                return  next(ApiError.badRequest({message: "Корзина не найдена" }));
+                return next(ApiError.badRequest({ message: "Корзина не найдена" }));
             }
-
+    
             const basketItem = await BasketItem.findOne({ where: { basketId: basket.id, itemId } });
-
+    
             if (!basketItem) {
-                return  next(ApiError.badRequest({message: "Товар не найден в корзине" }));
+                return next(ApiError.badRequest({ message: "Товар не найден в корзине" }));
             }
-
-            await basketItem.destroy();
-
-            return res.json({ message: "Товар удален из корзины" });
+    
+            if (--basketItem.quantity <= 0) {
+                await basketItem.destroy();
+            } else {
+                await basketItem.save(); 
+            }
+    
+            
+            const offset = (page - 1) * limit;
+            const basketItems = await BasketItem.findAndCountAll({
+                where: { basketId: basket.id },
+                limit,
+                offset,
+                include: [{ model: Item }]
+            });
+    
+            return res.json(basketItems);
         } catch (e) {
             next(ApiError.badRequest(e.message));
         }

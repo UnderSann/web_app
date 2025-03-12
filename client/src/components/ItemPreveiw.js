@@ -5,6 +5,8 @@ import { observer } from 'mobx-react-lite';
 import { ITEM_ROUTE } from '../utils/consts';
 import { Cart } from 'react-bootstrap-icons';
 const ItemPreveiw = observer(({ item }) => {
+
+      
     return (
         <Card 
             key={item.id} 

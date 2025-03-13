@@ -26,7 +26,7 @@ export default class ItemStore {
 
     setSelectedType(type) {
         if (this._selectedType !== type) {
-            this.setPage(1);  // Переключаемся на первую страницу
+            this.setPage(1); 
             this._selectedType = type;
         }
     }

@@ -21,6 +21,5 @@ export const check = async () =>{
         return jwtDecode(data.token)
     }catch(e){
             localStorage.removeItem('token');
-            alert(e.response.data.message);
     }
 }

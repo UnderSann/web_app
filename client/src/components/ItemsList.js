@@ -12,6 +12,7 @@ import { SHOP_ROUTE, LOGIN_ROUTE } from '../utils/consts';
 import Loading from './Loading'
 const ItemsList = observer(({ type }) => {
     const { item } = useContext(Context);
+    
     const [loadingItems, setLoadingItems] = useState(true);
     let navigate=useNavigate()
     const toMain = () => {

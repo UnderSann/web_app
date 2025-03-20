@@ -18,30 +18,30 @@ const CartButton = ({item, isBasket}) => {
       const data = await addToBasket(user.user.id, item.id);
       if(data)
       {
-        basket.addBasketItem(data);
+        basket.addBasketItems(data);
       }
     } catch (error) {
       console.error("Ошибка добавления в корзину:", error.response?.data || error.message);
     }
   };
-const deleteFromCart = async () => {
-  try {
-    const data = await deleteFromBasket(user.user.id, item.id,basket.page,basket.limit); // Убедитесь, что передаете item.id
-    if (data) {
-      basket.setBasketItem(data.rows);
-      basket.setTotalCount(data.count);
+const deleteFromCart = async (toClear=0) => {
+    try {
+      const data = await deleteFromBasket(user.user.id, item.id, basket.page, basket.limit, toClear);
+      if (data) {
+        basket.setBasketItems(data.rows);
+        basket.setTotalCount(data.count);
+      }
+    } catch (error) {
+      console.error("Ошибка удаления:", error.response?.data || error.message);
     }
-  } catch (error) {
-    console.error("Ошибка удаления:", error.response?.data || error.message);
-  }
-};
+  };
 
   return (
     <Button
       variant="outline-dark"
       className="m-1"
       style={{ width: 70, height: 50 }}
-      onClick={() => (isBasket ? deleteFromCart() : addToCart())}
+      onClick={() => (isBasket ? deleteFromCart(1) : addToCart())}
     >
       {isBasket ? <Trash /> : <Cart />}
     </Button>

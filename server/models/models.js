@@ -21,8 +21,11 @@ const Item=sequelize.define('item',{
     name: {type: DataTypes.STRING, unique: true, allowNull: false},
     price: {type: DataTypes.INTEGER, allowNull: false},
     rating: {type: DataTypes.INTEGER, defaultValue: 0},
-    img: {type: DataTypes.STRING, allowNull: false},
 })
+const ItemImage = sequelize.define('item_image', {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    img: { type: DataTypes.STRING, allowNull: false },
+});
 const Rating=sequelize.define('rating',{
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement:true },
     name: {type: DataTypes.INTEGER, allowNull: false},
@@ -67,6 +70,9 @@ BasketItem.belongsTo(Item)
 Item.hasMany(ItemInfo,{as:'info'})
 ItemInfo.belongsTo(Item)
 
+Item.hasMany(ItemImage, { as: 'img'});
+ItemImage.belongsTo(Item);
+
 module.exports = {
     User,
     Basket,
@@ -74,5 +80,6 @@ module.exports = {
     Item,
     Type,
     Rating,
-    ItemInfo
+    ItemInfo,
+    ItemImage
 }

@@ -1,7 +1,7 @@
 const uuid = require('uuid');
 const path = require('path');
 const fs = require('fs');
-const { Item,ItemInfo } = require('../models/models');
+const { Item,ItemInfo, BasketItem,ItemImage } = require('../models/models');
 const ApiError = require('../error/ApiError');
 
 class ItemController {
@@ -19,11 +19,14 @@ class ItemController {
             filePath = path.resolve(__dirname, '..', 'static', fileName);
     
             // Создаем объект в БД
-            const item = await Item.create({ name, price, typeId, img: fileName });
-    
+            const item = await Item.create({ name, price, typeId });
             // Только после успешного создания в БД загружаем файл
             await img.mv(filePath);
-    
+            const itemImage = await ItemImage.create({
+                img: fileName, // Сохраняем имя файла
+                itemId: item.id // Связываем с созданным Item
+            });
+            
             // Обработка информации, если есть
             if (info) {
                 info = JSON.parse(info);
@@ -76,11 +79,11 @@ class ItemController {
     }
     async deleteOne(req, res, next) {
         try {
-            const { id } = req.body;
+            const { userId,itemId } = req.body;
     
             // Находим объект по id, включая связанную информацию
             const item = await Item.findOne({
-                where: { id },
+                where: { id:itemId },
                 include: [{ model: ItemInfo, as: 'info' }]
             });
     
@@ -97,10 +100,10 @@ class ItemController {
             }
     
             // Удаляем связанные записи из ItemInfo
-            await ItemInfo.destroy({ where: { itemId: id } });
-    
+            await ItemInfo.destroy({ where: { id:itemId } });
+            await BasketItem.destroy({ where: { basketId:userId, itemId } });
             // Удаляем сам Item
-            await Item.destroy({ where: { id } });
+            await Item.destroy({ where: { id:itemId } });
     
             return res.json({ message: "Товар успешно удален" });
         } catch (e) {

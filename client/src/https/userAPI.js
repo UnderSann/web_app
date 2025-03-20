@@ -1,6 +1,7 @@
 import { $authHost,$host } from ".";
 import { jwtDecode } from "jwt-decode"; 
-
+import { Context } from "..";
+import { useContext } from "react";
 
 
 export const registration = async (email, password) =>{
@@ -21,5 +22,14 @@ export const check = async () =>{
         return jwtDecode(data.token)
     }catch(e){
             localStorage.removeItem('token');
+    }
+}
+
+export const deleteUser = async (userId,user) =>{
+    if(user.role==="ADMIN"){
+        await $authHost.delete('api/user/delete', {data:userId})
+    }
+    else{
+        await $authHost.delete('api/user/delete', {data:user.id})
     }
 }

@@ -21,6 +21,7 @@ class BasketController {
                 where: { basketId: basket.id },
                 limit,
                 offset,
+                order: [['createdAt', 'DESC']], 
                 include: [{ model: Item }]
             });
     
@@ -35,7 +36,7 @@ class BasketController {
     // Добавить товар в корзину
     async addToBasket(req, res, next) {
         try {
-            const { userId, itemId, quantity = 1 } = req.body;
+            let { userId, itemId, page = 1, limit = 10, quantity = 1 } = req.body;
 
             // Находим корзину пользователя или создаем, если её нет
             let basket = await Basket.findOne({ where: { userId } });
@@ -52,8 +53,19 @@ class BasketController {
             } else {
                 basketItem = await BasketItem.create({ basketId: basket.id, itemId, quantity });
             }
+            page = page || 1;
+            limit = limit || 10;
+            let offset = (page - 1) * limit;
 
-            return res.json(basketItem);
+            const basketItems = await BasketItem.findAndCountAll({
+                where: { basketId: basket.id },
+                limit,
+                offset,
+                order: [['createdAt', 'DESC']], 
+                include: [{ model: Item }]
+            });
+    
+            return res.json(basketItems);
         } catch (e) {
             next(ApiError.badRequest(e.message));
         }
@@ -62,7 +74,7 @@ class BasketController {
     // Удалить один товар из корзины
     async removeFromBasket(req, res, next) {
         try {
-            const { userId, itemId, page = 1, limit = 10 } = req.body;
+            const { userId, itemId, page = 1, limit = 10, toClear } = req.body;
     
             const basket = await Basket.findOne({ where: { userId } });
             if (!basket) {
@@ -74,7 +86,9 @@ class BasketController {
             if (!basketItem) {
                 return next(ApiError.badRequest({ message: "Товар не найден в корзине" }));
             }
-    
+            if(toClear){
+                basketItem.quantity=1;
+            }
             if (--basketItem.quantity <= 0) {
                 await basketItem.destroy();
             } else {
@@ -84,13 +98,15 @@ class BasketController {
             
             const offset = (page - 1) * limit;
             const basketItems = await BasketItem.findAndCountAll({
-                where: { basketId: basket.id },
+            where: { basketId: basket.id },
                 limit,
                 offset,
+                order: [['createdAt', 'DESC']], 
                 include: [{ model: Item }]
             });
-    
+
             return res.json(basketItems);
+
         } catch (e) {
             next(ApiError.badRequest(e.message));
         }
@@ -99,7 +115,7 @@ class BasketController {
     // Очистить корзину пользователя
     async clearBasket(req, res, next) {
         try {
-            const { userId } = req.params;
+            const { userId } = req.body;
 
             const basket = await Basket.findOne({ where: { userId } });
 

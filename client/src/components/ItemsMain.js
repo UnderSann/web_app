@@ -6,6 +6,7 @@ import { observer } from 'mobx-react-lite';
 import { fetchTypes, fetchItems } from '../https/itemAPI';
 import ItemsHorScroll from './ItemsHorScroll';
 import Loading from './Loading'
+import { clearBasket } from '../https/basketAPI';
 const ItemsMain = observer(() => {
     const { item } = useContext(Context);
     const [loadingItems, setLoadingItems] = useState(true);
@@ -34,6 +35,7 @@ const ItemsMain = observer(() => {
             {item.types.map(type => (
                 <ItemsHorScroll key={type.id} type={type} />
             ))}
+            
         </Row>
     );
 });

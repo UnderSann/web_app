@@ -6,11 +6,10 @@ export default class BasketStore {
         this._page = 1;
         this._totalCount = 0;
         this._limit = 5;
-        this._isDel=0;//Доделай!!
         makeAutoObservable(this);
     }
 
-    setBasketItem(basketItems) {
+    setBasketItems(basketItems) {
         this._basketItems = basketItems;
     }
 

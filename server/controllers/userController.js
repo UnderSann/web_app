@@ -1,7 +1,7 @@
 const ApiError = require('../error/ApiError');
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-const {User, Basket} = require('../models/models')
+const {User, Basket, BasketItem} = require('../models/models')
 
 const generateJwt = (id, email, role) => {
     return jwt.sign(
@@ -27,6 +27,7 @@ class UserController{
         const token = generateJwt(user.id,user.email,user.role)
         return res.json({token})
     }
+
     async login(req,res,next){
         const {email, password} = req.body
         const user = await User.findOne({where:{email}})
@@ -40,9 +41,29 @@ class UserController{
         const token = generateJwt(user.id,user.email,user.role)
         return res.json({token})
     }
+
     async check(req,res){
         const token = generateJwt(req.user.id,req.user.email,req.user.role)
         return res.json({token})
+    }
+
+    async deleteUser(req,res,next){
+        const {userId} = req.body
+        const user =await User.findOne({where:{id:userId}})
+        const basket=await Basket.findOne({where:{userId}})
+        if(!user){
+            return next(ApiError.badRequest('Данного пользователя не существует: '+userId))
+        }
+        try{
+            await BasketItem.destroy({ where: { basketId: basket.id } });
+            if (basket) {
+                await basket.destroy();
+            }
+            await user.destroy();
+        }catch(e){
+            return next(ApiError.badRequest('Ошибка удаления '))
+        }
+        return res.json({message:"Пользователь "+ userId + " удален"})
     }
 }
 module.exports=new UserController()

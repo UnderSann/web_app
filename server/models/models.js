@@ -70,7 +70,7 @@ BasketItem.belongsTo(Item)
 Item.hasMany(ItemInfo,{as:'info'})
 ItemInfo.belongsTo(Item)
 
-Item.hasMany(ItemImage, { as: 'img'});
+Item.hasMany(ItemImage,{as:'imgs'});
 ItemImage.belongsTo(Item);
 
 module.exports = {

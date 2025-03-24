@@ -4,7 +4,14 @@ import { observer } from 'mobx-react-lite';
 
 const ItemsHorScroll = observer(({ item }) => {
     const scrollRef = useRef(null);
-    const images = Array.isArray(item.img) ? item.img : [item.img];
+    const images =item.imgs;
+    const [viewerOpen, setViewerOpen] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(0);
+
+    const openViewer = (index) => {
+        setSelectedIndex(index);
+        setViewerOpen(true);
+      };
 
     const handleWheelScroll = (e) => {
         if (scrollRef.current && scrollRef.current.scrollWidth > scrollRef.current.clientWidth) {
@@ -34,13 +41,13 @@ const ItemsHorScroll = observer(({ item }) => {
             onWheel={handleWheelScroll}
         >
             {images.length > 0 ? (
-                images.map((image, index) => (
+                images.map(img => (
                     <Image
-                        key={index} // Уникальный ключ
+                        key={img.id} // Уникальный ключ
                         className="p-1 mx-auto d-block"
                         width={300}
                         height={350}
-                        src={process.env.REACT_APP_API_URL + image}
+                        src={process.env.REACT_APP_API_URL + img.img}
                     />
                 ))
             ) : (
@@ -49,6 +56,7 @@ const ItemsHorScroll = observer(({ item }) => {
                 </div>
             )}
         </div>
+        
     );
 });
 

@@ -14,19 +14,20 @@ const CartButton = ({item, isBasket}) => {
   const {user}=useContext(Context)
 
   const addToCart = async () => {
-    try {
-      const data = await addToBasket(user.user.id, item.id);
-      if(data)
-      {
-        basket.addBasketItems(data);
+      try {
+        const data = await addToBasket(user.user.id, item.id,basket.page,basket.limit);
+        if(data)
+        {
+          basket.setBasketItems(data.rows);
+          basket.setTotalCount(data.count);
+        }
+      } catch (error) {
+        console.error("Ошибка добавления в корзину:", error.response?.data || error.message);
       }
-    } catch (error) {
-      console.error("Ошибка добавления в корзину:", error.response?.data || error.message);
-    }
-  };
-const deleteFromCart = async (toClear=0) => {
+    };
+  const deleteFromCart = async (toClear=0) => {
     try {
-      const data = await deleteFromBasket(user.user.id, item.id, basket.page, basket.limit, toClear);
+      const data = await deleteFromBasket(user.user.id, item.id, basket.page, basket.limit, toClear); 
       if (data) {
         basket.setBasketItems(data.rows);
         basket.setTotalCount(data.count);
@@ -35,7 +36,6 @@ const deleteFromCart = async (toClear=0) => {
       console.error("Ошибка удаления:", error.response?.data || error.message);
     }
   };
-
   return (
     <Button
       variant="outline-dark"

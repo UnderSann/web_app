@@ -25,7 +25,7 @@ const ItemPreveiw = observer(({ item }) => {
             <Image 
                 className="p-1 mx-auto d-block" 
                 width={240} height={290} 
-                src={process.env.REACT_APP_API_URL + item.img} 
+                src={process.env.REACT_APP_API_URL + item.imgs[0].img} 
             />
 
             {/* Контейнер для name и price */}

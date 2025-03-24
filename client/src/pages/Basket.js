@@ -32,10 +32,14 @@ const Basket =  observer(() =>{
     const toMain = () => {
             navigate(SHOP_ROUTE)
         }
-    const clearCart = () => {
-        clearBasket(user.user.id)
-        let data =basket.setBasketItems([])
-    }
+        const clearCart = () => {
+            clearBasket(user.user.id).then(() => {
+                basket.setBasketItems([]); // Очистка элементов корзины
+                basket.setTotalCount(0); // Сбрасываем счётчик
+                basket.setPage(1)
+            });
+        };
+      
     return (
         <Container style={{ paddingTop: '80px', position: 'relative' }}>
             <ArrowLeft 
@@ -47,8 +51,8 @@ const Basket =  observer(() =>{
                             background:'white'
                         }} 
                         onClick={() => toMain()}
-                    />
-            <Button
+            />
+             <Button
                 variant="outline-dark"
                 className="m-1"
                 style={{

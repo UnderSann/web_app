@@ -7,7 +7,7 @@ export const addToBasket = async (userId,itemId,page, limit=1) =>{
     return data
 }
 
-export const fetchBasket = async (userId,page, limit=1) =>{
+export const fetchBasket = async (userId,page=1,limit=1) =>{
     const {data} = await $authHost.get(`api/basket/${userId}`,{params:{
         page, limit
     }})

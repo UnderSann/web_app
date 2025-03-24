@@ -8,8 +8,7 @@ import { ITEM_ROUTE } from '../utils/consts';
 import { addToBasket, deleteFromBasket } from '../https/basketAPI';
 
 import CartButton from './CartTrashButton';
-const ItemPreview_2 = observer(({ item, isBasket = 0, quantity}) => {
-  
+const ItemPreview_2 = observer(({ item, isBasket = 0, quantity=0}) => {
   const { basket } = useContext(Context);
   const {user}=useContext(Context)
   const navigate = useNavigate();
@@ -63,7 +62,7 @@ const ItemPreview_2 = observer(({ item, isBasket = 0, quantity}) => {
           className="me-3"
           width={190}
           height={190}
-          src={process.env.REACT_APP_API_URL + item.img}
+          src={process.env.REACT_APP_API_URL + item.imgs[0].img}
           style={{ objectFit: 'cover' }}
         />
         

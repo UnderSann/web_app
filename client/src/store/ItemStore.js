@@ -4,6 +4,7 @@ export default class ItemStore {
     constructor() {
         this._types = [];
         this._items = [];
+        this._imgs=[];
         this._selectedType = {};
         this._page = 1;
         this._totalCount = 0;
@@ -19,7 +20,9 @@ export default class ItemStore {
     setItems(items) {
         this._items = items;
     }
-
+    setImgs(imgs) {
+        this._imgs = imgs;
+    }
     addItem(item) {
         this._items.push(item);
     }
@@ -50,6 +53,9 @@ export default class ItemStore {
 
     get items() {
         return this._items;
+    }
+    get imgs() {
+        return this._imgs;
     }
 
     get selectedType() {

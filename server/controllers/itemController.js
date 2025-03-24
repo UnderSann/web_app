@@ -1,7 +1,7 @@
 const uuid = require('uuid');
 const path = require('path');
 const fs = require('fs');
-const { Item,ItemInfo, BasketItem,ItemImage } = require('../models/models');
+const { Item,ItemInfo, BasketItem,ItemImage,Type } = require('../models/models');
 const ApiError = require('../error/ApiError');
 
 class ItemController {
@@ -10,7 +10,10 @@ class ItemController {
         try {
             let { name, price, typeId, info } = req.body;
             const { img } = req.files;
-    
+            const type= await Type.findOne({where:{typeId}})
+            if(!type){
+                return next(ApiError.badRequest("Нет такого типа"));
+            }
             // Создаём Item
             const item = await Item.create({ name, price, typeId });
     
@@ -25,6 +28,9 @@ class ItemController {
                     itemId: item.id
                 });
             }
+            else{
+                return next(ApiError.badRequest("Укажите фото"));
+            }
     
             // Обработка информации info, если она есть
             if (info) {
@@ -36,6 +42,13 @@ class ItemController {
                         itemId: item.id
                     })
                 ));
+            }
+            else{
+                await ItemInfo.create({
+                        title:"",
+                        discription: "",
+                        itemId: item.id
+                    })
             }
     
             // Запрос для возврата item с info и ItemImage
@@ -102,6 +115,46 @@ class ItemController {
             next(ApiError.badRequest(e.message));
         }
     }
+
+    async deleteImg(req, res, next) {
+        try {
+            const { itemId, imgId } = req.body; // Получаем itemId и imgId из тела запроса
+    
+            // Проверяем наличие предмета
+            const item = await Item.findOne({
+                where: { id: itemId },
+                include: [{ model: ItemImage, as: 'imgs' }] // Включаем связанные изображения
+            });
+    
+            if (!item) {
+                return next(ApiError.badRequest("Item not found")); // Если предмет не найден
+            }
+    
+            // Проверяем наличие изображения
+            const img = await ItemImage.findOne({ where: { id: imgId, itemId } });
+            if (!img) {
+                return next(ApiError.badRequest("Image not found")); // Если изображение не найдено
+            }
+    
+            // Удаляем файл изображения
+            const filePath = path.resolve(__dirname, '..', 'static', img.img);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath); // Удаляем файл
+            }
+    
+            // Удаляем запись изображения из базы данных
+            await ItemImage.destroy({ where: { id: imgId } });
+    
+            // Обновляем список всех оставшихся изображений для товара
+            const remainingImages = await ItemImage.findAll({ where: { itemId } });
+    
+            // Возвращаем оставшиеся изображения
+            return res.json(remainingImages);
+        } catch (e) {
+            next(ApiError.badRequest(e.message));
+        }
+    }
+    
     
     async getAll(req, res, next) {
         try {
@@ -161,37 +214,148 @@ class ItemController {
     
     async deleteOne(req, res, next) {
         try {
-            const { userId,itemId } = req.body;
+            const { userId, itemId } = req.body;
     
-            // Находим объект по id, включая связанную информацию
+            // Находим объект по id, включая связанные изображения
             const item = await Item.findOne({
-                where: { id:itemId },
-                include: [{ model: ItemInfo, as: 'info' }]
+                where: { id: itemId },
+                include: [
+                    { model: ItemInfo, as: 'info' }, // Ассоциация с ItemInfo
+                    { model: ItemImage, as: 'imgs' } // Ассоциация с ItemImage
+                ]
             });
     
             if (!item) {
                 return res.status(404).json({ message: "Товар не найден" });
             }
     
-            // Удаляем файл изображения, если он есть
-            if (item.img) {
-                const filePath = path.resolve(__dirname, '..', 'static', item.img);
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath);
+            // Удаляем файлы всех связанных изображений
+            if (item.imgs && item.imgs.length > 0) {
+                for (const img of item.imgs) {
+                    const filePath = path.resolve(__dirname, '..', 'static', img.img);
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath); // Удаляем файл изображения
+                    }
                 }
             }
     
-            // Удаляем связанные записи из ItemInfo
-            await ItemInfo.destroy({ where: { id:itemId } });
-            await BasketItem.destroy({ where: { basketId:userId, itemId } });
-            // Удаляем сам Item
-            await Item.destroy({ where: { id:itemId } });
+            // Удаляем связанные записи из ItemImage
+            await ItemImage.destroy({ where: { itemId } });
     
-            return res.json({ message: "Товар успешно удален" });
+            // Удаляем связанные записи из ItemInfo
+            await ItemInfo.destroy({ where: { itemId } });
+    
+            // Удаляем записи из BasketItem
+            await BasketItem.destroy({ where: { basketId: userId, itemId } });
+    
+            // Удаляем сам Item
+            await Item.destroy({ where: { id: itemId } });
+    
+            return res.json({ message: "Товар и все связанные данные успешно удалены" });
         } catch (e) {
             next(ApiError.badRequest(e.message));
         }
     }
+
+    async updateItem(req, res, next) {
+        try {
+            const { itemId, name, price, rating, typeId, info } = req.body; // Получаем параметры из тела запроса
+    
+            // Проверяем наличие itemId
+            if (!itemId) {
+                return next(ApiError.badRequest("Предмет не передан"));
+            }
+            const type= await Type.findOne({where:{typeId}})
+            if(!type){
+                return next(ApiError.badRequest("Нет такого типа"));
+            }
+            // Находим Item в базе данных
+            const item = await Item.findOne({
+                where: { id: itemId },
+                include: [
+                    { model: ItemInfo, as: 'info' }, // Включаем ItemInfo
+                ]
+            });
+    
+            if (!item) {
+                return next(ApiError.badRequest("Предмет не найден не найден"));
+            }
+    
+            // Обновляем данные Item, если указаны параметры
+            const updatedFields = {};
+            if (name) updatedFields.name = name;
+            if (price) updatedFields.price = price;
+            if (rating) updatedFields.rating = rating;
+            if (typeId) updatedFields.typeId = typeId;
+    
+            await Item.update(updatedFields, { where: { id: itemId } });
+
+            if (info && Array.isArray(info)) {
+                for (const itemInfo of info) {
+                    const { id, title, discription } = itemInfo;
+    
+                    if (id) {
+                        // Обновляем существующую запись в ItemInfo
+                        await ItemInfo.update(
+                            { title, discription },
+                            { where: { id } }
+                        );
+                    } else {
+                        // Создаём новую запись в ItemInfo
+                        await ItemInfo.create({
+                            title,
+                            discription,
+                            itemId
+                        });
+                    }
+                }
+            }
+    
+            // Запрос для возврата item с info и ItemImage
+            const fullItem = await Item.findOne({
+                where: { id: itemId },
+                include: [
+                    { model: ItemInfo, as: 'info' }, // Ассоциация info
+                    { model: ItemImage, as: 'imgs' } // Ассоциация imgs
+                ]
+            });
+    
+            // Возвращаем полный объект с изображениями и инфо
+            return res.json(fullItem);
+        } catch (e) {
+            next(ApiError.badRequest(e.message));
+        }
+    }
+    /*
+    async updateItemInfo(req, res, next) {
+        try {
+            const { itemId, title, discription } = req.body; // Получаем параметры из тела запроса
+    
+
+    
+            // Находим запись ItemInfo по itemInfoId
+            const itemInfo = await ItemInfo.findOne({ where: { itemId } });
+            if (!itemInfo) {
+                return next(ApiError.badRequest("Обьект не найден"));
+            }
+    
+            // Обновляем запись в базе данных
+            await ItemInfo.update(
+                { title, discription }, // Новые значения
+                { where: { itemId } } // Условие обновления
+            );
+    
+            // Возвращаем обновлённую запись
+            const updatedItemInfo = await ItemInfo.findOne({ where: { itemId } });
+    
+            return res.json(updatedItemInfo);
+        } catch (e) {
+            next(ApiError.badRequest(e.message));
+        }
+    }*/
+    
     
 }
+
+
 module.exports = new ItemController();

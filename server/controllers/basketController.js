@@ -1,4 +1,4 @@
-const { Basket, BasketItem, Item } = require('../models/models');
+const { Basket, BasketItem, Item, ItemImage,ItemInfo } = require('../models/models');
 const ApiError = require('../error/ApiError');
 
 class BasketController {
@@ -22,7 +22,15 @@ class BasketController {
                 limit,
                 offset,
                 order: [['createdAt', 'DESC']], 
-                include: [{ model: Item }]
+                include: [
+                    {
+                        model: Item,
+                        include: [
+                            { model: ItemInfo, as: 'info' },  // Добавляем ItemInfo
+                            { model: ItemImage, as: 'imgs' } // Добавляем ItemImage
+                        ]
+                    }
+                ]
             });
     
             return res.json(basketItems);
@@ -62,7 +70,15 @@ class BasketController {
                 limit,
                 offset,
                 order: [['createdAt', 'DESC']], 
-                include: [{ model: Item }]
+                include: [
+                    {
+                        model: Item,
+                        include: [
+                            { model: ItemInfo, as: 'info' },  // Добавляем ItemInfo
+                            { model: ItemImage, as: 'imgs' } // Добавляем ItemImage
+                        ]
+                    }
+                ]
             });
     
             return res.json(basketItems);
@@ -102,7 +118,15 @@ class BasketController {
                 limit,
                 offset,
                 order: [['createdAt', 'DESC']], 
-                include: [{ model: Item }]
+                include: [
+                    {
+                        model: Item,
+                        include: [
+                            { model: ItemInfo, as: 'info' },  // Добавляем ItemInfo
+                            { model: ItemImage, as: 'imgs' } // Добавляем ItemImage
+                        ]
+                    }
+                ]
             });
 
             return res.json(basketItems);

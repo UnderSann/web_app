@@ -1,23 +1,26 @@
-import React, { useContext,useState,useEffect } from 'react';
+import React, { useContext } from 'react';
 import { Card, Image, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useLocation } from 'react-router-dom';
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
 import { TriangleFill } from 'react-bootstrap-icons';
-import { ITEM_ROUTE } from '../utils/consts';
+import { BASKET_ROUTE, ITEM_ROUTE, SHOP_ROUTE } from '../utils/consts';
 import { addToBasket, deleteFromBasket } from '../https/basketAPI';
-
 import CartButton from './CartTrashButton';
+
 const ItemPreview_2 = observer(({ item, isBasket = 0, quantity=0}) => {
-  const { basket } = useContext(Context);
-  const {user}=useContext(Context)
-  const navigate = useNavigate();
-  const handleCardClick = (e) => {
-    if (e.target.tagName === "BUTTON" || e.target.closest("button")) {
-      return;
-    }
-    navigate(ITEM_ROUTE + '/' + item.id);
-  };
+    const navigate = useNavigate();
+    const { basket } = useContext(Context);
+    const { paths } = useContext(Context);
+    const {user}=useContext(Context);
+    const location = useLocation();
+    const handleCardClick = (e) => {
+        if (e.target.tagName === "BUTTON" || e.target.closest("button")) {
+        return;
+        }
+        paths.push(location.pathname);
+        navigate(ITEM_ROUTE + '/' + item.id);
+    };
   const addToCart = async () => {
     try {
       const data = await addToBasket(user.user.id, item.id,basket.page,basket.limit);

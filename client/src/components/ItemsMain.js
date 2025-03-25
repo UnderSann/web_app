@@ -27,7 +27,7 @@ const ItemsMain = observer(() => {
 
     return (
         
-        <Row className='d-flex flex-column'>
+        <Row className='d-flex flex-column m-2'>
             {/* Передаём корректный пустой объект, но создаём его в самом компоненте */}
             <ItemsHorScroll type={{ name: "Все товары", id: -1 }} />
 

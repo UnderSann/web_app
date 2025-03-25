@@ -14,6 +14,7 @@ import { SHOP_ROUTE } from '../utils/consts';
 import { ArrowLeft } from 'react-bootstrap-icons';
 const Basket =  observer(() =>{
     const { basket } = useContext(Context);
+    const { paths } = useContext(Context);
     const {user}=useContext(Context)
     const userId=user.user.id
     const [loadingItems, setLoadingItems] = useState(true);
@@ -30,7 +31,7 @@ const Basket =  observer(() =>{
         return (<Loading/>);
     }
     const toMain = () => {
-            navigate(SHOP_ROUTE)
+        navigate(paths.pop())
         }
         const clearCart = () => {
             clearBasket(user.user.id).then(() => {
@@ -41,7 +42,7 @@ const Basket =  observer(() =>{
         };
       
     return (
-        <Container style={{ paddingTop: '80px', position: 'relative' }}>
+        <Container style={{ paddingTop: '80px' }}>
             <ArrowLeft 
                         className="position-fixed start-0 top-30 translate-middle-y z-3"
                         style={{ marginLeft:10, 
@@ -60,7 +61,7 @@ const Basket =  observer(() =>{
                     height: 40,
                     position: 'fixed',
                     right: '20px',
-                    top: '80px',
+                    top: 100,
                     zIndex: 10,
                     background:'white',
                     color: 'black'
@@ -69,7 +70,7 @@ const Basket =  observer(() =>{
             >
                 Очистить
             </Button>
-    
+          <Row  className="d-flex justify-content-center align-items-center mt-1">
             {basket.basketItems.length !== 0 ? (
                 basket.basketItems.map((basketItem) => (
                     <ItemPreveiw_2 
@@ -84,7 +85,7 @@ const Basket =  observer(() =>{
                     Корзина пустая
                 </div>
             )}
-            
+            </Row>
             <Pages item={basket} />
         </Container>
     );

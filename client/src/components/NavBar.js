@@ -16,7 +16,7 @@ const NavBar = observer(() => {
         user.setIsAuth(false)
         localStorage.removeItem('token');
         navigate(SHOP_ROUTE)
-    }
+    }   
     const toMain = () => {
         item.setSelectedType({})
         navigate(SHOP_ROUTE)

@@ -1,12 +1,37 @@
-import React from 'react';
-import { Button, Card, Image} from 'react-bootstrap';
-import { NavLink } from 'react-router-dom';
+import React, { useContext} from 'react';
+import { useNavigate,useLocation } from 'react-router-dom';
+import { Button,Card,Image } from "react-bootstrap";
+import { Context } from '..';
 import { observer } from 'mobx-react-lite';
-import { ITEM_ROUTE } from '../utils/consts';
+import { addToBasket, deleteFromBasket } from '../https/basketAPI';
+import { ITEM_ROUTE, SHOP_ROUTE } from '../utils/consts';
 import { Cart } from 'react-bootstrap-icons';
 const ItemPreveiw = observer(({ item }) => {
+    const navigate = useNavigate();
+    const { basket } = useContext(Context);
+    const { paths } = useContext(Context);
+    const {user}=useContext(Context);
+    const location = useLocation();
+    const handleCardClick = (e) => {
+        if (e.target.tagName === "BUTTON" || e.target.closest("button")) {
+        return;
+        }
+        paths.push(location.pathname);
+        navigate(ITEM_ROUTE + '/' + item.id);
+    };
+    const addToCart = async () => {
+      try {
+        const data = await addToBasket(user.user.id, item.id,basket.page,basket.limit);
+        if(data)
+        {
+          basket.setBasketItems(data.rows);
+          basket.setTotalCount(data.count);
+        }
+      } catch (error) {
+        console.error("Ошибка добавления в корзину:", error.response?.data || error.message);
+      }
+    };
 
-      
     return (
         <Card 
             key={item.id} 
@@ -18,7 +43,7 @@ const ItemPreveiw = observer(({ item }) => {
                 whiteSpace: "normal",
                 wordWrap: "break-word"
             }}
-            as={NavLink} to={ITEM_ROUTE+"/"+item.id}
+            onClick={handleCardClick}
             border='dark'
         >
             {/* Изображение по центру */}
@@ -38,8 +63,9 @@ const ItemPreveiw = observer(({ item }) => {
                     {item.price+" BYN"} 
                 </div>
             </div>
-            <Button variant="outline-dark" className="m-2">
-                    <Cart/>
+            <Button variant="outline-dark" className="m-2"
+            onClick={() => (addToCart())}>
+                <Cart/>
             </Button>
 
         </Card>    

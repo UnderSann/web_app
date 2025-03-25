@@ -4,6 +4,7 @@ import App from './App.js';
 import UserStore from './store/UserStore.js';
 import ItemStore from './store/ItemStore.js';
 import BasketStore from './store/BasketStore.js';
+import PathStore from './store/PathStore.js';
 export const Context = createContext(null)
 
 // Создаем корень для рендеринга
@@ -16,7 +17,8 @@ root.render(
     <Context.Provider value={{
       user: new UserStore(),
       item: new ItemStore(),
-      basket: new BasketStore()
+      basket: new BasketStore(),
+      paths: new PathStore()
     }}>
     <App />
     </Context.Provider>

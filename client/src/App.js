@@ -1,12 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { BrowserRouter } from 'react-router-dom';
 import AppRouter from './components/AppRouter';
+
 import NavBar from './components/NavBar';
 import { observer } from 'mobx-react-lite';
 import { Spinner } from 'react-bootstrap';
 import { Context } from './index.js';
 import { check } from './https/userAPI';
 import { NavLink, useLocation,useNavigate } from 'react-router-dom';
+import RouteTracker from './components/RouterTracker.js';
 
 const App = observer(() => {
   const {user} = useContext(Context)

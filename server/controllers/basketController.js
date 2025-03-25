@@ -21,6 +21,7 @@ class BasketController {
                 where: { basketId: basket.id },
                 limit,
                 offset,
+                distinct: true, // Уникальный подсчёт записей
                 order: [['createdAt', 'DESC']], 
                 include: [
                     {
@@ -69,6 +70,7 @@ class BasketController {
                 where: { basketId: basket.id },
                 limit,
                 offset,
+                distinct: true, // Уникальный подсчёт записей
                 order: [['createdAt', 'DESC']], 
                 include: [
                     {
@@ -117,6 +119,7 @@ class BasketController {
             where: { basketId: basket.id },
                 limit,
                 offset,
+                distinct: true, // Уникальный подсчёт записей
                 order: [['createdAt', 'DESC']], 
                 include: [
                     {

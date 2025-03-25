@@ -160,35 +160,42 @@ class ItemController {
         try {
             let { typeId, limit, page } = req.query;
     
-            // Устанавливаем значения по умолчанию
+            // Устанавливаем значения по умолчанию для пагинации
             page = page || 1;
             limit = limit || 10;
             let offset = (page - 1) * limit;
     
-            // Определяем, какие данные загружать
+            // Опции для получения данных с использованием ассоциаций
             const options = {
-                limit,
+                limit, 
                 offset,
+                distinct: true, // Уникальный подсчёт записей
                 include: [
-                    { model: ItemInfo, as: 'info' }, // Включаем связанные данные info
-                    { model: ItemImage, as: 'imgs' } // Включаем связанные данные imgs
+                    { model: ItemInfo, as: 'info', required: false }, // Включаем данные info
+                    { model: ItemImage, as: 'imgs', required: false } // Включаем данные imgs
                 ]
             };
     
             if (typeId) {
-                // Если typeId указан, добавляем условие
+                // Добавляем условие фильтрации по typeId
                 options.where = { typeId };
             }
     
             // Получаем предметы с подсчётом общего количества
             const items = await Item.findAndCountAll(options);
     
+            // Проверяем наличие данных
+            if (!items.rows.length) {
+                return res.json({ count: 0, rows: [] }); // Если данных нет
+            }
+    
             return res.json(items);
         } catch (e) {
-            // Обработка ошибок
+            // Ловим и возвращаем ошибки
             next(ApiError.badRequest(e.message));
         }
     }
+    
     
 
     async getOne(req, res, next) {

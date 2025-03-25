@@ -1,5 +1,5 @@
 import React, { useContext,useState,useEffect } from 'react';
-import { useParams,useNavigate  } from 'react-router-dom';
+import { useParams,useNavigate,useLocation   } from 'react-router-dom';
 import { Container,Row,Spinner } from "react-bootstrap";
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
@@ -9,10 +9,12 @@ import ImgHorScroll from '../components/ImgHorScroll';
 import { BASKET_ROUTE } from '../utils/consts';
 import { ArrowLeft } from 'react-bootstrap-icons';
 const ItemPage = observer(() => {
-   const { item } = useContext(Context);
+    const { item } = useContext(Context);
+    const { paths } = useContext(Context);
     const [loadingItem, setLoadingItem] = useState(true);
     const { id } = useParams();
     const navigate =useNavigate()
+    const location = useLocation();
     useEffect(() => {
         setLoadingItem(true);
         fetchOneItem(id).then(data => {
@@ -21,8 +23,7 @@ const ItemPage = observer(() => {
     
     }, []);
         const back = () => {
-            item.setSelectedType({})
-            navigate(BASKET_ROUTE)
+            navigate(paths.pop())
         }
     if (loadingItem ) {
         return (

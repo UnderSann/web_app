@@ -2,16 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { Image } from 'react-bootstrap';
 import { observer } from 'mobx-react-lite';
 
-const ItemsHorScroll = observer(({ item }) => {
+const ImgHorScroll = observer(({ item }) => {
     const scrollRef = useRef(null);
     const images =item.imgs;
-    const [viewerOpen, setViewerOpen] = useState(false);
-    const [selectedIndex, setSelectedIndex] = useState(0);
-
-    const openViewer = (index) => {
-        setSelectedIndex(index);
-        setViewerOpen(true);
-      };
 
     const handleWheelScroll = (e) => {
         if (scrollRef.current && scrollRef.current.scrollWidth > scrollRef.current.clientWidth) {
@@ -60,4 +53,4 @@ const ItemsHorScroll = observer(({ item }) => {
     );
 });
 
-export default ItemsHorScroll;
+export default ImgHorScroll;

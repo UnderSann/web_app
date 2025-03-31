@@ -5,7 +5,7 @@ import { Context } from '..';
 import { observer } from 'mobx-react-lite';
 import { TriangleFill } from 'react-bootstrap-icons';
 import { BASKET_ROUTE, ITEM_ROUTE, SHOP_ROUTE } from '../utils/consts';
-import { addToBasket, deleteFromBasket } from '../https/basketAPI';
+import { addToCart, deleteFromCart } from '../scripts/basketScr';
 import CartButton from './CartTrashButton';
 
 const ItemPreview_2 = observer(({ item, isBasket = 0, quantity=0}) => {
@@ -21,29 +21,6 @@ const ItemPreview_2 = observer(({ item, isBasket = 0, quantity=0}) => {
         paths.push(location.pathname);
         navigate(ITEM_ROUTE + '/' + item.id);
     };
-  const addToCart = async () => {
-    try {
-      const data = await addToBasket(user.user.id, item.id,basket.page,basket.limit);
-      if(data)
-      {
-        basket.setBasketItems(data.rows);
-        basket.setTotalCount(data.count);
-      }
-    } catch (error) {
-      console.error("Ошибка добавления в корзину:", error.response?.data || error.message);
-    }
-  };
-  const deleteFromCart = async (toClear=0) => {
-    try {
-      const data = await deleteFromBasket(user.user.id, item.id, basket.page, basket.limit, toClear); 
-      if (data) {
-        basket.setBasketItems(data.rows);
-        basket.setTotalCount(data.count);
-      }
-    } catch (error) {
-      console.error("Ошибка удаления:", error.response?.data || error.message);
-    }
-  };
   return (
     <Card
       key={item.id}
@@ -84,13 +61,13 @@ const ItemPreview_2 = observer(({ item, isBasket = 0, quantity=0}) => {
           <div className="d-flex flex-column align-items-center me-2">
             <Button variant="light" size="sm" 
             className="p-0 border-0"
-            onClick={() => (addToCart())}>
+            onClick={() => (addToCart(user,item,basket))}>
               <TriangleFill size={16} />
             </Button>
             <span className="fw-bold">{quantity}</span>
             <Button variant="light" size="sm" 
             className="p-0 border-0"
-            onClick={() => (deleteFromCart())}>
+            onClick={() => (deleteFromCart(user,item,basket))}>
               <TriangleFill size={16} style={{ transform: 'rotate(180deg)' }} />
             </Button>
           </div>

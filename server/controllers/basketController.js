@@ -40,7 +40,6 @@ class BasketController {
         }
     }
     
-    
 
     // Добавить товар в корзину
     async addToBasket(req, res, next) {

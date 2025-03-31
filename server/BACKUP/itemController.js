@@ -3,8 +3,21 @@ const path = require('path');
 const fs = require('fs');
 const { Item,ItemInfo, BasketItem,ItemImage,Type,Color,Order } = require('../models/models');
 const ApiError = require('../error/ApiError');
+async function getFullItem(itemId) {
+    return await Item.findOne({
+        where: { id: itemId },
+        include: [
+            { model: ItemInfo, as: 'info' }, // Ассоциация info
+            { model: ItemImage, as: 'imgs' }, // Ассоциация imgs
+            { model: Color, as: 'colors'}   
+        ]
+    });
+}
 
 class ItemController {
+// Функция для выполнения запроса к базе данных
+
+
     async create(req, res, next) {
         let filePath; // Объявляем заранее
         try {
@@ -50,18 +63,7 @@ class ItemController {
                         itemId: item.id
                     })
             }
-    
-            // Запрос для возврата item с info и ItemImage
-            const fullItem = await Item.findOne({
-                where: { id: item.id },
-                include: [
-                    { model: ItemInfo, as: 'info' }, // Включаем связанные данные info
-                    { model: ItemImage, as:"imgs" }, // Включаем связанные данные ItemImage
-                    { model: Color, as: 'colors' }
-                ]
-            });
-    
-            return res.json(fullItem);
+            return res.json(getFullItem(item.id));
         } catch (e) {
             // Удаляем загруженное изображение, если оно уже было сохранено
             if (filePath && fs.existsSync(filePath)) {
@@ -96,18 +98,8 @@ class ItemController {
                 });
             }
     
-            // Запрос для возврата item с info и ItemImage
-            const fullItem = await Item.findOne({
-                where: { id: itemId },
-                include: [
-                    { model: ItemInfo, as: 'info' }, // Ассоциация info
-                    { model: ItemImage, as: 'imgs' }, // Ассоциация imgs
-                    { model: Color, as: 'colors' }
-                ]
-            });
-    
             // Возвращаем полный объект с изображениями и инфо
-            return res.json(fullItem);
+            return res.json(getFullItem(itemId));
         } catch (e) {
             // Удаляем загруженное изображение, если оно уже было сохранено
             if (filePath && fs.existsSync(filePath)) {
@@ -203,19 +195,8 @@ class ItemController {
     async getOne(req, res, next) {
         try {
             const { id } = req.params;
-    
-            // Запрос к базе данных с использованием единого include
-            const item = await Item.findOne({
-                where: { id },
-                include: [
-                    { model: ItemInfo, as: 'info' }, // Включаем связанные данные info
-                    { model: ItemImage, as: 'imgs' }, // Включаем связанные данные imgs
-                    { model: Color, as: 'colors' }
-                ]
-            });
-    
             // Возвращаем найденный предмет
-            return res.json(item);
+            return res.json(getFullItem(id));
         } catch (e) {
             // Обработка ошибок
             next(ApiError.badRequest(e.message));
@@ -227,14 +208,7 @@ class ItemController {
             const { itemId } = req.body;
     
             // Находим объект по id, включая связанные данные
-            const item = await Item.findOne({
-                where: { id: itemId },
-                include: [
-                    { model: ItemInfo, as: 'info' }, // Ассоциация с ItemInfo
-                    { model: ItemImage, as: 'imgs' }, // Ассоциация с ItemImage
-                    { model: Color, as: 'colors' }    // Ассоциация с Color
-                ]
-            });
+            const item=getFullItem(itemId)
     
             if (!item) {
                 return res.status(404).json({ message: "Товар не найден" });
@@ -290,16 +264,7 @@ class ItemController {
                 return next(ApiError.badRequest("Нет такого типа"));
             }
             // Находим Item в базе данных
-            const item = await Item.findOne({
-                where: { id: itemId },
-                include: [
-                    { model: ItemInfo, as: 'info' }, // Включаем ItemInfo
-                    { model: ItemImage, as: 'img' },
-                    { model: Color, as: 'colors' }
-                    
-                ]
-                
-            });
+            const item = getFullItem(itemId)
     
             if (!item) {
                 return next(ApiError.badRequest("Предмет не найден не найден"));
@@ -335,18 +300,10 @@ class ItemController {
                 }
             }
     
-            // Запрос для возврата item с info и ItemImage
-            const fullItem = await Item.findOne({
-                where: { id: itemId },
-                include: [
-                    { model: ItemInfo, as: 'info' }, // Ассоциация с ItemInfo
-                    { model: ItemImage, as: 'imgs' }, // Ассоциация с ItemImage
-                    { model: Color, as: 'colors' }
-                ]
-            });
+         
     
             // Возвращаем полный объект с изображениями и инфо
-            return res.json(fullItem);
+            return res.json(getFullItem(itemId));
         } catch (e) {
             next(ApiError.badRequest(e.message));
         }
@@ -373,24 +330,10 @@ async addColor(req, res, next) {
         // Добавляем связь между Item и Color
         await item.addColor(color);
 
-        // Получаем обновленный объект Item с ассоциациями
-        const fullItem = await Item.findOne({
-            where: { id: itemId },
-
-           
-
-            include: [
-                { model: ItemInfo, as: 'info' }, // Ассоциация info
-                { model: ItemImage, as: 'imgs' }, // Ассоциация imgs
-                { model: Color, as: 'colors', 
-                    //through: { attributes: [] } 
-                }    // Ассоциация colors
-            ]
-            
-        });
+  
 
         // Возвращаем полный объект
-        return res.json(fullItem);
+        return res.json(getFullItem(itemId));
     } catch (e) {
         next(ApiError.badRequest(e.message));
     }
@@ -416,22 +359,10 @@ async removeColor(req, res, next) {
         // Удаляем связь между Item и Color
         await item.removeColor(color);
 
-        // Получаем обновленный объект Item с ассоциациями
-        const fullItem = await Item.findOne({
-            where: { id: itemId },
-            include: [
-                { model: ItemInfo, as: 'info' }, // Ассоциация info
-                { model: ItemImage, as: 'imgs' }, // Ассоциация imgs
-                { 
-                    model: Color, 
-                    as: 'colors',
-                    //through: { attributes: [] } // Исключаем промежуточную таблицу
-                }
-            ]
-        });
+
 
         // Возвращаем обновленный объект
-        return res.json(fullItem);
+        return res.json(getFullItem(itemId));
     } catch (e) {
         next(ApiError.badRequest(e.message));
     }

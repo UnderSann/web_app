@@ -1,0 +1,30 @@
+.pagination-container {
+    display: flex;
+    justify-content: flex-start; /* Кнопки будут выровнены влево */
+    align-items: center; /* Центрирование кнопок по вертикали */
+    margin-bottom: 30px; /* Отступ от нижней части контейнера */
+    position: relative; /* Для управления их позиционированием */
+  }
+  
+  .pagination-button {
+    margin: 0 2px; /* Отступ между кнопками */
+    padding: 10px 15px; /* Размер кнопок */
+    background-color: transparent; /* Прозрачный фон для неактивных кнопок */
+    color: #343a40; /* Темный текст */
+    border: 1px solid #343a40; /* Рамка кнопок */
+    border-radius: 5px; /* Закругленные углы */
+    cursor: pointer; /* Указатель при наведении */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .pagination-button:hover {
+    background-color: #e0e0e0; /* Легкий серый фон при наведении */
+    color: #343a40; /* Темный текст */
+  }
+  
+  .pagination-button.active {
+    background-color: #343a40; /* Темный фон активной кнопки */
+    color: #fff; /* Белый текст для активной кнопки */
+    border: 1px solid #343a40; /* Рамка для активной кнопки */
+  }
+  

@@ -55,6 +55,7 @@ const ItemsList = observer(({ type }) => {
         <Row className="d-flex justify-content-center mt-1">
             {allItems.length > 0 ?
                 allItems.map(item => (
+                    
                     <ItemPreveiw_2 item={item} isBasket={false} key={item.id} />
                 ))
                 : (

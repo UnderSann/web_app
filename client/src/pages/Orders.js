@@ -12,15 +12,9 @@ import Pages from '../components/Pages';
 import { useNavigate } from 'react-router-dom';
 import { SHOP_ROUTE } from '../utils/consts';
 import { ArrowLeft } from 'react-bootstrap-icons';
-import { useCartActions } from '../scripts/basketScr';
-import { useToast, UpWindowMessage } from '../components/UpWindowMessage';
-
 const Basket =  observer(() =>{
     const { basket } = useContext(Context);
     const { paths } = useContext(Context);
-    const { toast, showToast } = useToast(); // Хук вызывается здесь
-    const { clearCart } = useCartActions(showToast); // Передаем showToast
-
     const {user}=useContext(Context)
     const userId=user.user.id
     const [loadingItems, setLoadingItems] = useState(true);
@@ -39,7 +33,13 @@ const Basket =  observer(() =>{
     const toMain = () => {
         navigate(paths.pop())
         }
-;
+        const clearCart = () => {
+            clearBasket(user.user.id).then(() => {
+                basket.setBasketItems([]); // Очистка элементов корзины
+                basket.setTotalCount(0); // Сбрасываем счётчик
+                basket.setPage(1)
+            });
+        };
       
     return (
         <Container style={{ paddingTop: '80px' }}>
@@ -66,14 +66,13 @@ const Basket =  observer(() =>{
                     background:'white',
                     color: 'black'
                 }}
-                onClick={() =>clearCart(user,basket) }
+                onClick={() =>clearCart() }
             >
                 Очистить
             </Button>
-            <UpWindowMessage toast={toast} /> 
           <Row  className="d-flex justify-content-center align-items-center mt-1">
             {basket.basketItems.length !== 0 ? (
-                basket.basketItems.map((basketItem,basket) => (
+                basket.basketItems.map((basketItem) => (
                     <ItemPreveiw_2 
                         isBasket={true} 
                         key={basketItem.id}

@@ -5,11 +5,15 @@ import { Context } from '..';
 import { observer } from 'mobx-react-lite';
 import { TriangleFill } from 'react-bootstrap-icons';
 import { BASKET_ROUTE, ITEM_ROUTE, SHOP_ROUTE } from '../utils/consts';
-import { addToCart, deleteFromCart } from '../scripts/basketScr';
+import { useCartActions } from '../scripts/basketScr';
+import { useToast, UpWindowMessage } from '../components/UpWindowMessage';
 import CartButton from './CartTrashButton';
 
 const ItemPreview_2 = observer(({ item, isBasket = 0, quantity=0}) => {
     const navigate = useNavigate();
+
+    const { toast, showToast } = useToast(); // Хук вызывается здесь
+    const { addToCart,deleteFromCart } = useCartActions(showToast); // Передаем showToast
     const { basket } = useContext(Context);
     const { paths } = useContext(Context);
     const {user}=useContext(Context);
@@ -64,16 +68,18 @@ const ItemPreview_2 = observer(({ item, isBasket = 0, quantity=0}) => {
             onClick={() => (addToCart(user,item,basket))}>
               <TriangleFill size={16} />
             </Button>
+
             <span className="fw-bold">{quantity}</span>
             <Button variant="light" size="sm" 
             className="p-0 border-0"
             onClick={() => (deleteFromCart(user,item,basket))}>
               <TriangleFill size={16} style={{ transform: 'rotate(180deg)' }} />
-            </Button>
-          </div>
+            </Button>       
+            </div>
         ) : null}
-
-        <CartButton item={item} isBasket={isBasket} />
+            
+        <CartButton item={item} isBasket={isBasket} addToCart={addToCart} deleteFromCart={deleteFromCart}/>
+        <UpWindowMessage toast={toast} />
       </div>
     </Card>
   );

@@ -4,8 +4,9 @@ import React, { useContext } from 'react';
 import { Row } from "react-bootstrap";
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
+import '../styles/PaginationStyle.css';
 
-import ItemsHorScroll from './ItemsHorScroll';
+
 
 const Pages = observer(({item}) => {
   const pageCount=Math.ceil(item.totalCount / item.limit)
@@ -15,15 +16,25 @@ const Pages = observer(({item}) => {
     pages.push(i+1)
   }
   return(
-    <Pagination className='mt-5'>
-      {pages.map(page =>
-          <Pagination.Item
-            key={page}
-            active={item.page === page}
-            onClick={()=>item.setPage(page)}
-          >{page}</Pagination.Item>                      
-      )}
-    </Pagination>
+<div className="pagination-container">
+            {pages.map((page) => (
+                <button
+                    key={page}
+                    className={`pagination-button ${item.page === page ? 'active' : ''}`}
+                    onClick={() => {
+                      item.setPage(page);
+                      
+                      document.documentElement.scrollTop = 0; // Для HTML-документа
+                      document.body.scrollTop = 0; // Для тела страницы
+                      document.documentElement.style.scrollBehavior = 'auto';
+                      document.body.style.scrollBehavior = 'auto';
+                    }
+                  } 
+                >
+                    {page}
+                </button>
+            ))}
+        </div>
   )
 });
 

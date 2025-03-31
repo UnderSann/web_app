@@ -15,6 +15,7 @@ const Shop = observer(() => {
     const [loadingTypes, setLoadingTypes] = useState(true);
     useEffect(() => {
         setLoadingTypes(true);
+        
         basket.setPage(1)
         fetchTypes()
             .then((typesData) => {

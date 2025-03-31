@@ -43,11 +43,22 @@ class OrderController {
             return next(ApiError.internal('Ошибка при создании заказа, проверьте поля'));
         }
     }
-
+    async fetchAll(req, res, next) {
+        try {
+            const orders = await Order.findAll({
+                order: [['createdAt', 'DESC']] // Сортировка по createdAt в порядке убывания (новые записи сверху)
+            });
+            return res.json(orders);
+        } catch (e) {
+            next(ApiError.badRequest('Ошибка: ' + e.message));
+        }
+    }
+    
+        
     // Удаление заказа
     async delete(req, res, next) {
         try {
-            const { id } = req.params;
+            const { id } = req.body;
             const order = await Order.findOne({ where: { id } });
             if (!order) {
                 return next(ApiError.notFound('Заказ не найден'));
@@ -62,8 +73,7 @@ class OrderController {
     
     async update(req, res, next) {
         try {
-            const { id } = req.params;
-            const { quantity, text, insta, tg } = req.body;
+            const {id, quantity, text, insta, tg } = req.body;
     
             const order = await Order.findByPk(id);
             if (!order) {

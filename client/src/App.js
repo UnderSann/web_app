@@ -18,6 +18,7 @@ const App = observer(() => {
       if(data!==undefined){
       user.setUser(data)
       user.setIsAuth(true)
+      
       }
     }).finally(()=>setLoading(false))
   },[])

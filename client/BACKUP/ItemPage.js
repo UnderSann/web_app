@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Container, Row, Button, Modal, Form, Image, ListGroup } from "react-bootstrap";
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
@@ -7,37 +7,29 @@ import { fetchOneItem } from '../https/itemAPI';
 import Loading from '../components/Loading';
 import ImgHorScroll from '../components/ImgHorScroll';
 import { ArrowLeft } from 'react-bootstrap-icons';
-import { useCartActions } from '../scripts/basketScr';
-import { useToast, UpWindowMessage } from '../components/UpWindowMessage';
-
+import { addToCart } from '../scripts/basketScr';
 import { Cart } from 'react-bootstrap-icons';
-
+import CustomSelector from '../components/CustomSelector';
 const ItemPage = observer(() => {
-    const { toast, showToast } = useToast(); // Хук вызывается здесь
-    const { addToCart } = useCartActions(showToast); // Передаем showToast
     const { item, basket, user, paths } = useContext(Context);
     const [loadingItem, setLoadingItem] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const { id } = useParams();
-    const [selectedColor, setSelectedColor] = useState('');
     const navigate = useNavigate();
 
+    // Проверяем, есть ли этот товар в корзине
     const basketItem = basket.basketItems.find(b => b.itemId === Number(id));
-    const [quantity, setQuantity] = useState(basketItem ? basketItem.quantity : 1);
 
-    useEffect(() => {
-        if (showModal) {
-            const basketItem = basket.basketItems.find(b => b.itemId === Number(id));
-            setQuantity(basketItem ? basketItem.quantity : 1);
-        }
-    }, [showModal, basket.basketItems, id]);
+    // Устанавливаем количество товара (из корзины или 1)
+    const [quantity, setQuantity] = useState(basketItem ? basketItem.quantity : 1);
+    const [selectedColor, setSelectedColor] = useState('');
 
     useEffect(() => {
         setLoadingItem(true);
         fetchOneItem(id).then(data => {
             item.setItems(data);
         }).finally(() => setLoadingItem(false));
-    }, [id, item]);
+    }, []);
 
     const back = () => {
         navigate(paths.pop());
@@ -63,19 +55,14 @@ const ItemPage = observer(() => {
                 </Button>
                 <Button variant="outline-dark" className="flex-grow-1 m-2" onClick={() => addToCart(user, item.items, basket)}>
                     <Cart />
-                </Button>
+                </Button>  
 
-                <UpWindowMessage toast={toast} />
-
-                <Modal show={showModal} onHide={() => {
-                    setShowModal(false);  
-                    setSelectedColor('');
-                    }}
-                >
+                <Modal show={showModal} onHide={() => setShowModal(false)}>
                     <Modal.Header closeButton>
                         <Modal.Title>Оформление заказа</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
+                        {/* Название, цена и изображение */}
                         <div className="d-flex align-items-center justify-content-between">
                             <h5>{item.items.name} - {item.items.price} BYN</h5>
                             {item.items.imgs?.[0] && (
@@ -93,46 +80,33 @@ const ItemPage = observer(() => {
                             <Form.Control 
                                 type="number" 
                                 min="1" 
-                                value={quantity!=0? quantity:""} 
+                                value={quantity} 
                                 onChange={(e) => setQuantity(Number(e.target.value))} 
                                 placeholder="Введите количество"
                             />
                             {basketItem && <small className="text-muted">Количество товара загружено из корзины</small>}
                         </Form.Group>
 
-                        {/* Выбор цвета, если есть */}
                         {item.items.colors?.length > 0 && (
-                         <Form.Group className="mb-3" controlId="formColor">
-                             <Form.Label>Выберите цвет</Form.Label>
-                                <div className="d-flex align-items-center">
-                                    <Form.Select 
-                                        value={selectedColor} 
-                                        onChange={(e) => setSelectedColor(e.target.value)}
-                                        style={{ flex: 1 }}
-                                    >
-                                        <option value="">Не выбрано</option>
-                                        {item.items.colors.map(color => (
-                                        <option key={color.id} value={color.name}>
-                                            {color.name}
-                                        </option>
-                                        ))}
-                                    </Form.Select>
-            
-                                    {selectedColor && (
-                                        <span 
-                                            style={{
-                                                width: '20px',
-                                                height: '20px',
-                                                backgroundColor: item.items.colors.find(c => c.name === selectedColor)?.code,
-                                                marginLeft: '10px',
-                                                border: '1px solid #000',
-                                                display: 'inline-block'
-                                            }}
-                                        ></span>
-                                    )}
-                                </div>
-                            </Form.Group>
-                        )}
+    <Form.Group className="mb-3" controlId="formColor">
+        <Form.Label>Выберите цвет</Form.Label>
+        <div className="d-flex align-items-center">
+            <Form.Control as="select" value={selectedColor} onChange={(e) => setSelectedColor(e.target.value)} custom>
+                {item.items.colors?.length > 0 && (
+    <CustomSelector 
+        colors={item.items.colors} 
+        selectedColor={selectedColor} 
+        setSelectedColor={setSelectedColor} 
+    />
+)}
+
+            </Form.Control>
+        </div>
+    </Form.Group>
+)}
+
+
+
                         {/* Поля для контактов */}
                         <Form.Group className="mb-3" controlId="formText">
                             <Form.Label>Текст</Form.Label>
@@ -148,10 +122,7 @@ const ItemPage = observer(() => {
                         </Form.Group>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary"  onClick={() => {
-                            setShowModal(false);  
-                            setSelectedColor('');
-                        }}>Закрыть</Button>
+                        <Button variant="secondary" onClick={() => setShowModal(false)}>Закрыть</Button>
                         <Button variant="primary" onClick={() => alert(`Заказ: ${item.items.name}, ${quantity} шт., Цвет: ${selectedColor || "Не выбран"}`)}>
                             Отправить
                         </Button>
@@ -168,7 +139,7 @@ const ItemPage = observer(() => {
                                 {item.items.colors.map((color) => (
                                     color && (
                                         <div key={color.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-                                            <text>{color.name}</text>:
+                                            <strong>{color.name}</strong>:
                                             <span
                                                 style={{
                                                     width: '20px',
@@ -179,7 +150,7 @@ const ItemPage = observer(() => {
                                                     border: '1px solid #000',
                                                 }}
                                             ></span>
-                                            <text>;</text><pre> </pre>
+                                            <strong>;</strong><pre> </pre>
                                         </div>
                                     )
                                 ))}

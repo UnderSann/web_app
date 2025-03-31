@@ -3,11 +3,17 @@ import { useNavigate,useLocation } from 'react-router-dom';
 import { Button,Card,Image } from "react-bootstrap";
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
-import { addToBasket, deleteFromBasket } from '../https/basketAPI';
 import { ITEM_ROUTE, SHOP_ROUTE } from '../utils/consts';
 import { Cart } from 'react-bootstrap-icons';
+
+import { useCartActions } from '../scripts/basketScr';
+import { useToast, UpWindowMessage } from '../components/UpWindowMessage';
+
 const ItemPreveiw = observer(({ item }) => {
     const navigate = useNavigate();
+    const { toast, showToast } = useToast(); // Хук вызывается здесь
+    const { addToCart } = useCartActions(showToast); // Передаем showToast
+
     const { basket } = useContext(Context);
     const { paths } = useContext(Context);
     const {user}=useContext(Context);
@@ -19,20 +25,8 @@ const ItemPreveiw = observer(({ item }) => {
         paths.push(location.pathname);
         navigate(ITEM_ROUTE + '/' + item.id);
     };
-    const addToCart = async () => {
-      try {
-        const data = await addToBasket(user.user.id, item.id,basket.page,basket.limit);
-        if(data)
-        {
-          basket.setBasketItems(data.rows);
-          basket.setTotalCount(data.count);
-        }
-      } catch (error) {
-        console.error("Ошибка добавления в корзину:", error.response?.data || error.message);
-      }
-    };
-
     return (
+        
         <Card 
             key={item.id} 
             className="m-3" 
@@ -64,10 +58,10 @@ const ItemPreveiw = observer(({ item }) => {
                 </div>
             </div>
             <Button variant="outline-dark" className="m-2"
-            onClick={() => (addToCart())}>
+            onClick={() => (addToCart(user,item,basket))}>
                 <Cart/>
             </Button>
-
+            <UpWindowMessage toast={toast} />
         </Card>    
     );
 });

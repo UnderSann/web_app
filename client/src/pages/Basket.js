@@ -73,7 +73,7 @@ const Basket =  observer(() =>{
             <UpWindowMessage toast={toast} /> 
           <Row  className="d-flex justify-content-center align-items-center mt-1">
             {basket.basketItems.length !== 0 ? (
-                basket.basketItems.map((basketItem,basket) => (
+                basket.basketItems.map((basketItem) => (
                     <ItemPreveiw_2 
                         isBasket={true} 
                         key={basketItem.id}

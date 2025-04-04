@@ -1,0 +1,17 @@
+.arrow-left {
+    position: fixed;
+    left: 10px;
+    top: 20px;
+    width: 30px;
+    height: 30px;
+    background: white;
+    z-index: 10;
+}
+
+.item-preview-container {
+    position: relative;
+}
+
+.item-preview-container.shifted {
+    margin-top: 40px; /* Сдвиг вниз при наложении */
+}

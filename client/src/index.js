@@ -5,6 +5,7 @@ import UserStore from './store/UserStore.js';
 import ItemStore from './store/ItemStore.js';
 import BasketStore from './store/BasketStore.js';
 import PathStore from './store/PathStore.js';
+import OrderStore from './store/OrderStore.js';
 export const Context = createContext(null)
 
 // Создаем корень для рендеринга
@@ -18,6 +19,7 @@ root.render(
       user: new UserStore(),
       item: new ItemStore(),
       basket: new BasketStore(),
+      order: new OrderStore(),
       paths: new PathStore()
     }}>
     <App />

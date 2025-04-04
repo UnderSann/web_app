@@ -1,16 +1,18 @@
-const { Order, Item, User, ItemImage } = require('../models/models');
+const { Order, Item, User, ItemImage, Color } = require('../models/models');
 const ApiError = require('../error/ApiError');
 
 class OrderController {
     // Создание заказа
     async create(req, res, next) {
         try {
-            const { userId, itemId, quantity, text, insta, tg } = req.body;
+            const { userId, itemId, colorId, quantity, text, insta, tg } = req.body;
 
             if (!quantity || quantity <= 0) {
                 return next(ApiError.badRequest('Укажите количество'));
             }
-
+            if (!colorId) {
+                return next(ApiError.badRequest('Укажите цвет'));
+            }
             // Проверяем существование пользователя
             const user = await User.findByPk(userId);
             if (!user) {
@@ -20,18 +22,23 @@ class OrderController {
             // Проверяем существование товара
             const item = await Item.findOne({
                 where: { id: itemId },
-                include: [
-                    { model: ItemImage, as: 'imgs' }
-                ]
+                include: [{ model: ItemImage, as: 'imgs' }]
             });
             if (!item) {
                 return next(ApiError.notFound('Товар не найден'));
+            }
+
+            // Проверяем существование цвета
+            const color = await Color.findByPk(colorId);
+            if (!color) {
+                return next(ApiError.notFound('Цвет не найден'));
             }
 
             // Создаём заказ
             const order = await Order.create({
                 userId,
                 itemId,
+                colorId,
                 quantity,
                 text,
                 insta,
@@ -43,18 +50,49 @@ class OrderController {
             return next(ApiError.internal('Ошибка при создании заказа, проверьте поля'));
         }
     }
-    async fetchAll(req, res, next) {
+
+    async fetchAllUsers(req, res, next) {
         try {
+            const userId = Number(req.params.userId); // Приводим к числу
+            if (!userId) {
+                return next(ApiError.badRequest("Некорректный userId"));
+            }
+    
             const orders = await Order.findAll({
-                order: [['createdAt', 'DESC']] // Сортировка по createdAt в порядке убывания (новые записи сверху)
+                where: { userId },
+                order: [['createdAt', 'DESC']],
+                include: [
+                    {
+                        model: Item,
+                        include: [
+                            { model: ItemImage, as: 'imgs' } // Вложенный include внутри Item
+                        ]
+                    },
+                    {
+                        model: Color
+                    }
+                ]
             });
+    
             return res.json(orders);
         } catch (e) {
             next(ApiError.badRequest('Ошибка: ' + e.message));
         }
     }
     
-        
+
+    async fetchAll(req, res, next) {
+        try {
+            const orders = await Order.findAll({
+                order: [['createdAt', 'DESC']],
+                include: [User, Item, Color] // Добавляем информацию о пользователе, товаре и цвете
+            });
+            return res.json(orders);
+        } catch (e) {
+            next(ApiError.badRequest('Ошибка: ' + e.message));
+        }
+    }
+
     // Удаление заказа
     async delete(req, res, next) {
         try {
@@ -70,24 +108,33 @@ class OrderController {
             return next(ApiError.internal('Ошибка при удалении заказа'));
         }
     }
-    
+
     async update(req, res, next) {
         try {
-            const {id, quantity, text, insta, tg } = req.body;
-    
+            const { id, quantity, text, insta, tg, colorId } = req.body;
+
             const order = await Order.findByPk(id);
             if (!order) {
                 return next(ApiError.notFound('Заказ не найден'));
             }
-    
+
+            // Проверяем новый цвет, если он передан
+            if (colorId !== undefined) {
+                const color = await Color.findByPk(colorId);
+                if (!color) {
+                    return next(ApiError.notFound('Цвет не найден'));
+                }
+            }
+
             // Обновляем только переданные поля
             await order.update({
                 quantity: quantity !== undefined ? quantity : order.quantity,
                 text: text !== undefined ? text : order.text,
                 insta: insta !== undefined ? insta : order.insta,
-                tg: tg !== undefined ? tg : order.tg
+                tg: tg !== undefined ? tg : order.tg,
+                colorId: colorId !== undefined ? colorId : order.colorId
             });
-    
+
             return res.json(order);
         } catch (e) {
             return next(ApiError.internal('Ошибка при обновлении заказа'));

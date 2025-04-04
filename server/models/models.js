@@ -90,6 +90,9 @@ ItemImage.belongsTo(Item);
 Order.belongsTo(Item);
 Item.hasMany(Order);
 
+Order.belongsTo(Color);
+Color.hasMany(Order);
+
 User.hasMany(Order, { as: 'orders' });
 Order.belongsTo(User);
 

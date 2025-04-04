@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Context } from '..';
 import { Button, Container, Form, Nav, Navbar, NavDropdown } from 'react-bootstrap';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { SHOP_ROUTE, LOGIN_ROUTE, BASKET_ROUTE } from '../utils/consts';
+import { SHOP_ROUTE, LOGIN_ROUTE, BASKET_ROUTE,ORDER_ROUTE } from '../utils/consts';
 import { observer } from 'mobx-react-lite';
 import { Cart } from 'react-bootstrap-icons';
 const NavBar = observer(() => {
@@ -31,7 +31,9 @@ const NavBar = observer(() => {
                         {
                             user.isAuth ? (
                                 <>
-                                    <Button variant="outline-dark" className="m-2"as={NavLink} to={BASKET_ROUTE}><Cart/></Button>
+                                    <Button className="m-1" variant="outline-dark"  as={NavLink} to={ORDER_ROUTE}>Заказы</Button>
+                                    <Button variant="outline-dark" className="m-2" as={NavLink} to={BASKET_ROUTE}><Cart/></Button>
+
                                     <Button className="m-1" variant="outline-dark">Панель администратора</Button>
                                     <Button  className="m-1" variant="outline-dark" onClick={() => logOut()}>Выйти</Button>
                                 </>

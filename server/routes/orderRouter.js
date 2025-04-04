@@ -7,6 +7,7 @@ const orderController = require('../controllers/orderController')
 router.post('/',orderController.create)
 
 router.get('/',orderController.fetchAll)
+router.get('/:userId',orderController.fetchAllUsers)
 
 router.delete('/delete',orderController.delete)
 

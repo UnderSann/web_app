@@ -39,6 +39,36 @@ class BasketController {
             next(ApiError.badRequest(e.message));
         }
     }
+    async fetchOne(req, res, next) {
+        try {
+            const { userId,itemId } = req.params;
+    
+            // Проверяем наличие корзины
+            const basket = await Basket.findOne({ where: { userId } });
+            if (!basket) {
+                return res.json({ item: null }); // Возвращаем пустое значение, если корзины нет
+            }
+    
+            // Получаем один товар из корзины
+            const basketItem = await BasketItem.findOne({
+                where: { basketId: basket.id, itemId },
+                include: [
+                    {
+                        model: Item,
+                        include: [
+                            { model: ItemInfo, as: 'info' },  // Добавляем ItemInfo
+                            { model: ItemImage, as: 'imgs' },  // Добавляем ItemImage
+                        ]
+                    }
+                ]
+            });
+    
+            return res.json(basketItem);
+        } catch (e) {
+            next(ApiError.badRequest(e.message));
+        }
+    }
+    
     
 
     // Добавить товар в корзину

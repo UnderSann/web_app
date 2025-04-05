@@ -3,11 +3,11 @@ import { Row, Container } from "react-bootstrap";
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
 import Loading from '../components/Loading';
-import { fetchUserOrders } from '../https/orderAPI';
+import { fetchUserOrders,deleteOrder } from '../https/orderAPI';
 import { ArrowLeft } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import OrdersPreveiw from '../components/OrdersPreveiw';
-
+import { Cart } from 'react-bootstrap-icons';
 const Orders = observer(() => {
     const { order, paths, user } = useContext(Context);
     const navigate = useNavigate();
@@ -19,9 +19,7 @@ const Orders = observer(() => {
             setLoadingItems(true);
             try {
                 const data = await fetchUserOrders(user.user.id);
-                console.log("До установки в store:", order.orders);
                 order.setOrder(data);
-                console.log("После установки в store:", order.orders);
             } catch (e) {
                 console.error("Ошибка загрузки заказов:", e);
             } finally {
@@ -51,7 +49,7 @@ const Orders = observer(() => {
             <Row className="d-flex justify-content-center align-items-center mt-1">
                 {order.orders.length !== 0 ? (
                     order.orders.map((orderItem) => (
-                        <OrdersPreveiw orderItem={orderItem}></OrdersPreveiw>
+                        <OrdersPreveiw orderItem={orderItem} key={orderItem.id}></OrdersPreveiw>
                     ))
                 ) : (
                     <div className="p-3 text-muted" style={{ minWidth: '100%' }}>

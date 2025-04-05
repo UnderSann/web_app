@@ -56,10 +56,12 @@ const ItemInfo = sequelize.define('item_info', {
 
 const Order = sequelize.define('order', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    quantity: { type: DataTypes.INTEGER, defaultValue: 1, allowNull: false },
+    quantity: { type: DataTypes.INTEGER, defaultValue: 1, allowNull: false }, 
+    number: { type: DataTypes.STRING,allowNull: false },
     text: { type: DataTypes.STRING },
     insta: { type: DataTypes.STRING },
-    tg: { type: DataTypes.STRING },
+    comfirmed:{ type: DataTypes.BOOLEAN, defaultValue: false},
+    done:{ type: DataTypes.BOOLEAN, defaultValue: false},
 });
 
 // Связи

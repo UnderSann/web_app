@@ -1,11 +1,11 @@
 const { Order, Item, User, ItemImage, Color } = require('../models/models');
 const ApiError = require('../error/ApiError');
-
+const { isValidPhoneNumber } = require('libphonenumber-js');
 class OrderController {
     // Создание заказа
     async create(req, res, next) {
         try {
-            const { userId, itemId, colorId, quantity, text, insta, tg } = req.body;
+            const { userId, itemId, colorId, quantity, text, insta, number } = req.body;
 
             if (!quantity || quantity <= 0) {
                 return next(ApiError.badRequest('Укажите количество'));
@@ -13,6 +13,10 @@ class OrderController {
             if (!colorId) {
                 return next(ApiError.badRequest('Укажите цвет'));
             }
+            if (!number) {
+                return next(ApiError.badRequest('Укажите номер телефона'));
+            }
+            
             // Проверяем существование пользователя
             const user = await User.findByPk(userId);
             if (!user) {
@@ -42,7 +46,7 @@ class OrderController {
                 quantity,
                 text,
                 insta,
-                tg
+                number
             });
 
             return res.json(order);
@@ -96,7 +100,7 @@ class OrderController {
     // Удаление заказа
     async delete(req, res, next) {
         try {
-            const { id } = req.body;
+            const { id } = req.params;
             const order = await Order.findOne({ where: { id } });
             if (!order) {
                 return next(ApiError.notFound('Заказ не найден'));
@@ -105,19 +109,32 @@ class OrderController {
             await order.destroy();
             return res.json({ message: 'Заказ успешно удален' });
         } catch (e) {
-            return next(ApiError.internal('Ошибка при удалении заказа'));
+            return next(ApiError.badRequest('Ошибка при удалении заказа:'+e.message));
         }
     }
 
     async update(req, res, next) {
         try {
-            const { id, quantity, text, insta, tg, colorId } = req.body;
+            const { id, quantity, text, insta, number, colorId } = req.body;
 
             const order = await Order.findByPk(id);
             if (!order) {
                 return next(ApiError.notFound('Заказ не найден'));
             }
-
+            
+            if (!quantity || quantity <= 0) {
+                return next(ApiError.badRequest('Укажите количество'));
+            }
+            if (!colorId) {
+                return next(ApiError.badRequest('Укажите цвет'));
+            }
+            if (!number) {
+                return next(ApiError.badRequest('Укажите номер телефона'));
+            }
+            if (!isValidPhoneNumber(number)) {
+                return next(ApiError.badRequest('Неверный формат номера телефона'));
+            }
+            
             // Проверяем новый цвет, если он передан
             if (colorId !== undefined) {
                 const color = await Color.findByPk(colorId);
@@ -131,7 +148,7 @@ class OrderController {
                 quantity: quantity !== undefined ? quantity : order.quantity,
                 text: text !== undefined ? text : order.text,
                 insta: insta !== undefined ? insta : order.insta,
-                tg: tg !== undefined ? tg : order.tg,
+                number: number !== undefined ? number : order.number,
                 colorId: colorId !== undefined ? colorId : order.colorId
             });
 

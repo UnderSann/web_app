@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
-import { Button, Card, Spinner,NavLink } from 'react-bootstrap';
+import { Button, Card, Spinner, NavLink } from 'react-bootstrap';
 import { fetchItems } from '../https/itemAPI';
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
@@ -28,7 +28,6 @@ const ItemsHorScroll = observer(({ type }) => {
 
     const handleWheelScroll = (e) => {
         if (scrollRef.current && scrollRef.current.scrollWidth > scrollRef.current.clientWidth) {
-            e.preventDefault();
             scrollRef.current.scrollLeft += e.deltaY;
         }
     };
@@ -40,14 +39,16 @@ const ItemsHorScroll = observer(({ type }) => {
             }
         };
 
+        // Применяем passive: false на родительский элемент
         document.addEventListener('wheel', preventWindowScroll, { passive: false });
+
         return () => {
             document.removeEventListener('wheel', preventWindowScroll);
         };
     }, []);
 
     if (loading) return <Loading/>;
-    
+
     return (
         <div key={type.id} className='mb-3'>
             <Card onClick={() => item.setSelectedType(type)} className="p-3 d-flex" >

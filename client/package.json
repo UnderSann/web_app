@@ -9,8 +9,9 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.8.1",
     "bootstrap": "^5.3.3",
-    "framer-motion": "^12.5.0",
+    "framer-motion": "^12.6.3",
     "jwt-decode": "^4.0.0",
+    "libphonenumber-js": "^1.12.6",
     "lucide-react": "^0.483.0",
     "mobx": "^6.13.6",
     "mobx-react-lite": "^4.1.0",
@@ -18,8 +19,10 @@
     "react-bootstrap": "^2.10.9",
     "react-bootstrap-icons": "^1.11.5",
     "react-dom": "^19.0.0",
+    "react-phone-number-input": "^3.4.12",
     "react-router-dom": "^7.2.0",
     "react-scripts": "5.0.1",
+    "react-transition-group": "^4.4.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

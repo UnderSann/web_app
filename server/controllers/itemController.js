@@ -198,8 +198,6 @@ class ItemController {
         }
     }
     
-    
-
     async getOne(req, res, next) {
         try {
             const { id } = req.params;
@@ -213,7 +211,6 @@ class ItemController {
                     { model: Color, as: 'colors' }
                 ]
             });
-    
             // Возвращаем найденный предмет
             return res.json(item);
         } catch (e) {

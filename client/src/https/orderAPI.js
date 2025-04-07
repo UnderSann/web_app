@@ -23,8 +23,9 @@ export const deleteOrder = async (id) =>{
     return data
 }
 
-export const updateOrder = async (id,quantity, text, insta, number) =>{
-
-    const {data} = await $authHost.post('api/order/update', {id,quantity, text, insta, number})
-    return data
-}
+export const updateOrder = async (id, quantity, colorId, text, insta, number) => {
+    const { data } = await $authHost.post('api/order/update', {
+        id, quantity, colorId, text, insta, number
+    });
+    return data;
+};

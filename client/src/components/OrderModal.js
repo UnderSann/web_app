@@ -1,24 +1,27 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { Modal, Button, Form, Image, Alert } from "react-bootstrap";
 import { Context } from '..';
-import { createOrder, deleteOrder, fetchUserOrders } from '../https/orderAPI';
+import { createOrder, deleteOrder, fetchUserOrders,updateOrder } from '../https/orderAPI';
 import { useToast, UpWindowMessage } from '../components/UpWindowMessage';
 import { deleteFromBasket } from '../https/basketAPI';
 import Loading from '../components/Loading';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import { parsePhoneNumber } from 'libphonenumber-js';
+import  parsePhoneNumber  from 'libphonenumber-js';
 import { motion } from "framer-motion";
-import '../styles/OrderTabsAnimation.css';
 
 
-const OrderModal = ({ show, onHide }) => {
+const OrderModal = ({ show, onHide,editOrder = null  }) => {
+    const maxLength = process.env.REACT_APP_ORDER_TEXT_LIMIT;
+     
+    const isEditing = !!editOrder;
     const { toast, showToast } = useToast();
     const { user, item, basket, order } = useContext(Context);
     const [error, setError] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [selectedColor, setSelectedColor] = useState('');
     const [text, setText] = useState('');
+    const textAreaRef = useRef(null);
     const [number, setNumber] = useState('');
     const [inst, setInst] = useState('');
     const [orders, setOrders] = useState([]);
@@ -33,11 +36,12 @@ const OrderModal = ({ show, onHide }) => {
 
     const maxAvailable = process.env.REACT_APP_ORDER_LIMIT - order.orders.length;
     const availableToOrder = Math.max(0, maxAvailable);
+    
     useEffect(() => {
         if (basketItem) {
-            setQuantity(basketItem.quantity);
+            setQuantity(Math.min(basketItem.quantity, availableToOrder));
         }
-    }, [basketItem, show]);
+    }, [basketItem, show, availableToOrder]);
 
     useEffect(() => {
         setOrders(prevOrders => {
@@ -52,89 +56,139 @@ const OrderModal = ({ show, onHide }) => {
         });
     }, [quantity, maxAvailable]);
     
-
+    useEffect(() => {
+        if (show && textAreaRef.current) {
+            const textarea = textAreaRef.current;
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+    }, [show, orders, currentOrderIndex]);
+    
+    
     useEffect(() => {
         const loadOrders = async () => {
             if (!user?.user?.id) return;
             setLoadingItems(true);
+    
             try {
-                const data = await fetchUserOrders(user.user.id);
-                order.setOrder(data);
+                if (!isEditing) {
+                    const data = await fetchUserOrders(user.user.id);
+                    order.setOrder(data);
+                }
+                // Обновление данных в случае редактирования заказа
+                else {
+                    if (editOrder) {
+                        setOrders([{
+                            selectedColor: editOrder.colorId?.toString() || '',
+                            text: editOrder.text || ''
+                        }]);
+                        setNumber(editOrder.number || '');
+                        setInst(editOrder.insta || '');
+                        setQuantity(1);
+                        setCurrentOrderIndex(0);
+                        setIsFormChanged(false);
+                    }
+                }
             } catch (e) {
                 console.error("Ошибка загрузки заказов:", e);
             } finally {
                 setLoadingItems(false);
             }
         };
+    
         loadOrders();
-    }, [user?.user?.id, show]);
+    }, [user?.user?.id, show, isEditing, editOrder]);  // Добавить зависимость от editOrder
+    
 
     if (loadingItems) return <Loading />;
+    
+// Функция для проверки данных заказа
+const validateOrderData = (orders, quantity, number) => {
+    let errorMessage = "";
 
-    const handleSubmit = async () => {
-        //Проверка на корректность
-        if (maxAvailable >= quantity) {
-            try {
-                let msgErr = "";
-                for (let i = 0; i < quantity; i++) {
-                    const currentOrder = orders[i];
-                    if (!currentOrder.selectedColor) {
-                        msgErr += "Укажите цвет";
-                        if (quantity !== 1) msgErr += ` (вкладка ${i + 1})`;
-                        msgErr += "; ";
-                    }
-                }
+    // Проверка на наличие выбранного цвета
+    for (let i = 0; i < quantity; i++) {
+        const currentOrder = orders[i];
+        if (!currentOrder.selectedColor) {
+            errorMessage += "Укажите цвет";
+            if (quantity !== 1) errorMessage += ` (вкладка ${i + 1})`;
+            errorMessage += "; ";
+        }
+    }
 
-                if (!number) {
-                    msgErr += "Укажите номер телефона; ";
-                } else {
-                    try {
-                        const parsed = parsePhoneNumber(number);
-                        if (!parsed?.isValid()) {
-                            msgErr += "Некорректный номер телефона; ";
-                        }
-                    } catch {
-                        msgErr += "Неверный формат номера телефона; ";
-                    }
-                }
-
-                setError(msgErr.trim());
-                if (msgErr === "") {
-                    for (let i = 0; i < quantity; i++) {
-                        await createOrder(
-                            user.user.id,
-                            item.items.id,
-                            1,
-                            orders[i].selectedColor,
-                            orders[i].text,
-                            inst,
-                            number
-                        );
-                    }
-
-                    let itemsInBasket = basketItem ? basketItem.quantity : 0;
-                    const removeCount = Math.min(quantity, itemsInBasket);
-
-                    for (let i = 0; i < removeCount; i++) {
-                        const data = await deleteFromBasket(user.user.id, item.items.id, basket.page, basket.limit, 1);
-                        if (data) {
-                            basket.setBasketItems(data.rows);
-                            itemsInBasket--;
-                        }
-                    }
-
-                    onHide();
-                    resetForm();
-                    showToast(quantity > 1 ? 'Заказы оформлены успешно' : 'Заказ оформлен успешно', 'success');
-                }
-            } catch (e) {
-                setError(e.response?.data?.message || 'Ошибка оформления заказа');
+    // Проверка номера телефона
+    if (!number) {
+        errorMessage += "Укажите номер телефона; ";
+    } else {
+        try {
+            const parsed = parsePhoneNumber(number);
+            if (!parsed?.isValid()) {
+                errorMessage += "Некорректный номер телефона; ";
             }
+        } catch {
+            errorMessage += "Неверный формат номера телефона; ";
+        }
+    }
+
+    // Проверка длины текста
+    for (let i = 0; i < quantity; i++) {
+        const currentOrder = orders[i];
+        if (currentOrder.text?.length > 1000) {
+            errorMessage += `Текст для заказа ${i + 1} слишком длинный. Максимальная длина — 1000 символов; `;
+        }
+    }
+
+    return {
+        isValid: errorMessage.trim() === "",
+        errorMessage: errorMessage.trim()
+    };
+};
+// handleSubmit
+const handleSubmit = async () => {
+    if (maxAvailable >= quantity) {
+        try {
+            // Валидация данных
+            const { isValid, errorMessage } = validateOrderData(orders, quantity, number);
+            setError(errorMessage);
+            if (!isValid) return;
+
+            // Оформление заказов
+            for (let i = 0; i < quantity; i++) {
+                await createOrder(
+                    user.user.id,
+                    item.items.id,
+                    1,
+                    orders[i].selectedColor,
+                    orders[i].text,
+                    inst,
+                    number
+                );
+            }
+
+            // Обновление корзины
+            let itemsInBasket = basketItem ? basketItem.quantity : 0;
+            const removeCount = Math.min(quantity, itemsInBasket);
+
+            for (let i = 0; i < removeCount; i++) {
+                const data = await deleteFromBasket(user.user.id, item.items.id, basket.page, basket.limit, 1);
+                if (data) {
+                    basket.setBasketItems(data.rows);
+                    itemsInBasket--;
+                }
+            }
+
+            onHide();
+            resetForm();
+            showToast(quantity > 1 ? 'Заказы оформлены успешно' : 'Заказ оформлен успешно', 'success');
+        } catch (e) {
+            setError(e.response?.data?.message || 'Ошибка оформления заказа');
+        }
         } else {
-            setError('Допустимое количество заказов уже висит на рассмотрении (' + process.env.REACT_APP_ORDER_LIMIT + '). Ожидайте их принятия и полного изготовления или уменьшите колличество заказываемых товаров');
+            setError('Допустимое количество заказов уже висит на рассмотрении (' + process.env.REACT_APP_ORDER_LIMIT + '). Ожидайте их принятия и полного изготовления или уменьшите количество заказываемых товаров');
         }
     };
 
+    // resetForm
     const resetForm = () => {
         setSelectedColor('');
         setQuantity(1);
@@ -146,6 +200,39 @@ const OrderModal = ({ show, onHide }) => {
         setIsFormChanged(false);
     };
 
+    // redOrder
+    const redOrder = async () => {
+        // Валидация данных
+        const { isValid, errorMessage } = validateOrderData(orders, 1, number);
+        setError(errorMessage);
+        if (!isValid) return;
+
+        try {
+            const data = await updateOrder(
+                editOrder.id,
+                1,
+                orders[0].selectedColor,
+                orders[0].text,
+                inst,
+                number
+            );
+            
+            if (data) {
+                const updatedOrders = await fetchUserOrders(user.user.id);
+                if (updatedOrders) {
+                    order.setOrder(updatedOrders);
+                }
+                onHide();
+                resetForm();
+                showToast("Заказ успешно отредактирован", 'success');
+            }
+        } catch (e) {
+            console.error("Ошибка редактирования заказа:", e.response?.data?.message || e.message);
+            showToast(e.response?.data?.message || e.message, 'danger');
+        }
+    };
+
+    
     const handleOrderChange = (index, field, value) => {
         const updatedOrders = [...orders];
         updatedOrders[index] = { ...updatedOrders[index], [field]: value };
@@ -197,10 +284,12 @@ const OrderModal = ({ show, onHide }) => {
                     <div className="d-flex align-items-center justify-content-between">
                         <div>
                             <h5>{item.items.name} - {item.items.price} BYN</h5>
+                            {!isEditing&&
                             <small className="text-muted d-block mt-1">
                                 Доступно для заказа: {availableToOrder} из {process.env.REACT_APP_ORDER_LIMIT}
                             </small>
-                            {basketItem && (
+                            }
+                            {!isEditing && basketItem && (
                                 <small className="text-muted d-block mt-1">
                                     В корзине: {basketItem.quantity}
                                 </small>
@@ -215,13 +304,14 @@ const OrderModal = ({ show, onHide }) => {
                         )}
                     </div>
 
-                    {availableToOrder <= 0 ? (
+                    {!isEditing && availableToOrder <= 0 ? (
                         <div className="mt-3 text-danger text-center  fs-6">
                             Допустимое количество заказов уже висит на рассмотрении. Ожидайте их принятия и полного изготовления.
                         </div>
                     ) : (
                         <>
                             {/* Количество */}
+                            {!isEditing && 
                             <Form.Group className="mb-3 mt-3">
                                 <Form.Label>Количество</Form.Label>
                                 <div className="d-flex align-items-center justify-content-center" style={{ gap: '10px' }}>
@@ -244,7 +334,7 @@ const OrderModal = ({ show, onHide }) => {
                                         onChange={(e) => {
                                             const input = e.target.value.replace(/\D/g, '');
                                             const val = input === '' ? 0 : Number(input);
-                                            if (val > availableToOrder) {
+                                            if (val > availableToOrder ) {
                                                 setError("Количество превышает доступные места для заказа");
                                             } else {
                                                 setError("");
@@ -280,9 +370,9 @@ const OrderModal = ({ show, onHide }) => {
                                     >+</Button>
                                 </div>
                             </Form.Group>
-
+                            }
                             {/* Перелистывание и форма заказа */}
-                            {quantity > 1 && (
+                            {!isEditing && quantity > 1 && (
                                 <div className="d-flex justify-content-between mb-3">
                                     <Button variant="secondary" onClick={prevOrder} disabled={currentOrderIndex === 0}>
                                         ← Предыдущий заказ
@@ -311,7 +401,9 @@ const OrderModal = ({ show, onHide }) => {
                                                 <div className="d-flex align-items-center">
                                                     <Form.Select 
                                                         value={orders[currentOrderIndex]?.selectedColor || ''}
-                                                        onChange={(e) => handleOrderChange(currentOrderIndex, 'selectedColor', e.target.value)}
+                                                        onChange={(e) => {handleOrderChange(currentOrderIndex, 'selectedColor', e.target.value);
+                                                            setIsFormChanged(true)
+                                                        }}
                                                         style={{ flex: 1 }}
                                                     >
                                                         <option value="">Не выбрано</option>
@@ -337,13 +429,36 @@ const OrderModal = ({ show, onHide }) => {
 
                                         <Form.Group className="mb-3">
                                             <Form.Label>Текст</Form.Label>
-                                            <Form.Control 
-                                                type="text" 
+                                            <Form.Control
+                                                as="textarea"
+                                                ref={textAreaRef}
+                                                rows={1}
                                                 value={orders[currentOrderIndex]?.text || ''}
-                                                onChange={(e) => handleOrderChange(currentOrderIndex, 'text', e.target.value)}
-                                                placeholder="Введите текст" 
+                                                placeholder="Введите текст"
+                                                style={{ resize: 'none', overflow: 'hidden' }}
+                                                onChange={(e) => {
+                                                    const textarea = e.target;
+                                                    const newText = textarea.value;
+
+                                                    // Проверка длины текста
+                                                    if (newText.length <= maxLength) {
+                                                        // Если текст не превышает максимальную длину
+                                                        textarea.style.height = 'auto';
+                                                        textarea.style.height = textarea.scrollHeight + 'px';
+                                                        handleOrderChange(currentOrderIndex, 'text', newText);
+                                                        setError('');  // Очищаем ошибку, если текст в пределах лимита
+                                                    } else {
+                                                        // Если текст слишком длинный, показываем ошибку и блокируем ввод
+                                                        setError(`Максимальная длина текста — ${maxLength} символов.`);
+                                                    }
+
+                                                    setIsFormChanged(true);
+                                                }}
                                             />
+
+
                                         </Form.Group>
+
                                     </div>
                                 </motion.div>
                             </div>
@@ -352,6 +467,7 @@ const OrderModal = ({ show, onHide }) => {
                             <Form.Group className="mb-3">
                                 <Form.Label>Номер телефона</Form.Label>
                                 <PhoneInput
+                                    key={editOrder?.id || 'phone'}
                                     international
                                     defaultCountry="BY"
                                     value={number}
@@ -364,6 +480,7 @@ const OrderModal = ({ show, onHide }) => {
                                         } catch {
                                             setCountryName('');
                                         }
+                                        setIsFormChanged(true);
                                     }}
                                     className="form-control"
                                 />
@@ -379,7 +496,8 @@ const OrderModal = ({ show, onHide }) => {
                                 <Form.Control 
                                     type="text" 
                                     value={inst}
-                                    onChange={(e) => setInst(e.target.value)}
+                                    onChange={(e) => {setInst(e.target.value);
+                                    setIsFormChanged(true);}}
                                     placeholder="Ваш Instagram" 
                                 />
                             </Form.Group>
@@ -397,8 +515,11 @@ const OrderModal = ({ show, onHide }) => {
 
                 <Modal.Footer>
                     <Button variant="secondary" onClick={handleExit}>Закрыть</Button>
-                    {availableToOrder > 0 && (
+                    {availableToOrder > 0 &&!isEditing && (
                         <Button variant="primary" onClick={handleSubmit}>Оформить</Button>
+                    )}
+                     {isEditing && (
+                        <Button variant="primary" onClick={redOrder}>Сохранить</Button>
                     )}
                 </Modal.Footer>
             </Modal>
@@ -407,7 +528,7 @@ const OrderModal = ({ show, onHide }) => {
                                 <Modal.Title>Подтверждение</Modal.Title>
                             </Modal.Header>
                             <Modal.Body>
-                                <p>Вы уверены, что хотите выйти? Все введённые данные будут потеряны.</p>
+                                <p>Вы уверены, что хотите выйти? Все  {!isEditing?"введённые":"изменённые"} данные будут потеряны.</p>
                             </Modal.Body>
                             <Modal.Footer>
                                 <Button variant="secondary" onClick={cancelExit}>Отменить</Button>

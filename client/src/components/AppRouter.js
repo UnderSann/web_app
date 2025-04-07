@@ -1,26 +1,26 @@
-import React, {useContext}  from 'react';
+// AppRouter.js
+import React, { useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { authRoutes, publicRoutes } from '../routes';
-import { SHOP_ROUTE } from '../utils/consts';
+import ErrorPage from '../ErrorHandlers/ErrorPage';
+import { Context } from '../index';
 
-import { Context } from '../index.js';
 const AppRouter = () => {
+  const { user } = useContext(Context);
 
-    const {user}= useContext(Context)
-    console.log(user)
-    
-    return (
-        <Routes>
-            {user.isAuth && authRoutes.map(({ path, Component }) => 
-                <Route key={path} path={path} element={<Component />} />
-                
-            )}
-            {publicRoutes.map(({ path, Component }) => 
-                <Route key={path} path={path} element={<Component />} />
-            )}
-            <Route path="*" element={<Navigate to={SHOP_ROUTE} replace />} />
-        </Routes>
-    );
+  return (
+    <Routes>
+      {user.isAuth && authRoutes.map(({ path, Component }) =>
+        <Route key={path} path={path} element={<Component />} />
+      )}
+      {publicRoutes.map(({ path, Component }) =>
+        <Route key={path} path={path} element={<Component />} />
+      )}
+      {/* Маршрут для страницы ошибки */}
+      <Route path="/error/:errorCode" element={<ErrorPage />} />
+      <Route path="*" element={<Navigate to="/error/404" replace />} />
+    </Routes>
+  );
 };
 
 export default AppRouter;

@@ -16,24 +16,33 @@ import { Cart } from 'react-bootstrap-icons';
 const ItemPage = observer(() => {
     const { toast, showToast } = useToast(); // Хук вызывается здесь
     const { addToCart } = useCartActions(showToast); // Передаем showToast
-    const { item, basket, user, paths, order } = useContext(Context);
+    const { item, basket, user, paths, order,error } = useContext(Context);
     const [loadingItem, setLoadingItem] = useState(true);
     const [showModal, setShowModal] = useState(false);
 
-    const { id } = useParams();
     const navigate = useNavigate();
-
+    const { id } = useParams();
     useEffect(() => {
-        setLoadingItem(true);
-        fetchOneItem(id).then(data => {
-            item.setItems(data);
-             fetchOneBasket(user.user.id, item.items.id)  // Исправлено: item.items.id вместо item.items[0].id
-                            .then(data => {
-                                basket.setBasketItems([data]);  // Оборачиваем в массив, если API возвращает объект
-                                basket.setTotalCount(1);
-                            })
-        }).finally(() => setLoadingItem(false));
-    }, [id, item]);
+        fetchOneItem(id)
+            .then(data => {
+                
+                item.setItems(data);
+                if (user.user?.id && data?.id) {
+                    fetchOneBasket(user.user.id, data.id)
+                        .then(basketData => {
+                            basket.setBasketItems([basketData]);
+                            basket.setTotalCount(1);
+                        })
+                        .catch(err => console.error("Ошибка при загрузке корзины:", err));
+                }
+            })
+            .catch(err => {
+                console.error("Ошибка загрузки товара:", err);
+            })
+            .finally(() => {
+                setLoadingItem(false);
+            });
+    }, [id]);
 
     const back = () => {
         navigate(paths.pop());
@@ -43,17 +52,22 @@ const ItemPage = observer(() => {
         return <Loading />;
     }
 
+    // Переход к рендерингу данных после их загрузки
     return (
         <Container style={{ paddingTop: '80px' }}>
+            
             <ArrowLeft 
                 className="position-fixed start-0 top-30 translate-middle-y z-3"
                 style={{ marginLeft: 10, marginTop: 20, width: 30, height: 30, background: 'white' }} 
                 onClick={back}
             />
+            {!error.errorCode &&
             <Row>
-                <h1 className="mb-0 text-start">{item.items.name + " - " + item.items.price} BYN</h1>
+                {/* Название товара и цена */}
+                <h1 className="mb-0 text-start">{item.items?.name + " - " + item.items?.price} BYN</h1>
                 <ImgHorScroll item={item.items} />
                 
+                {/* Кнопки заказа */}
                 <Button variant="outline-dark" className="flex-grow-1 m-2" onClick={() => setShowModal(true)}>
                     Заказать
                 </Button>
@@ -63,20 +77,23 @@ const ItemPage = observer(() => {
 
                 <UpWindowMessage toast={toast} />
 
-                 <OrderModal 
+                {/* Модальное окно заказа */}
+                <OrderModal 
                     show={showModal} 
                     onHide={() => setShowModal(false)} 
                 />
-                {/* Вывод характеристик */}
-                {(((item.items.info && item.items.info.length) > 0) || ((item.items.colors && item.items.colors.length) > 0)) && (
+
+                {/* Характеристики товара */}
+                {(((item.items?.info && item.items?.info.length) > 0) || ((item.items?.colors && item.items?.colors.length) > 0)) && (
                     <div className="mt-4">
                         <h3>Характеристики</h3>
                         <ListGroup>
+                            {/* Цвета */}
                             <ListGroup.Item style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start' }}>
-                                <div  style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-                                    <strong >Цвета:</strong><pre> </pre>
+                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                                    <strong>Цвета:</strong><pre> </pre>
                                 </div>
-                                {item.items.colors.map((color) => (
+                                {item.items?.colors?.map(color => (
                                     color && (
                                         <div key={color.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
                                             <div>{color.name}</div>:
@@ -96,7 +113,8 @@ const ItemPage = observer(() => {
                                 ))}
                             </ListGroup.Item>
 
-                            {item.items.info.map(info => (
+                            {/* Описание характеристик */}
+                            {item.items?.info?.map(info => (
                                 info && (
                                     <ListGroup.Item key={info.id}>
                                         <strong>{info.title}:</strong> {info.discription}
@@ -107,6 +125,7 @@ const ItemPage = observer(() => {
                     </div>
                 )}
 
+                {/* Комментарии */}
                 <div className="mt-4">
                     <h4>Комментарии</h4>
                     <ListGroup>
@@ -116,6 +135,7 @@ const ItemPage = observer(() => {
                     </ListGroup>
                 </div>
             </Row>
+            }
         </Container>
     );
 });

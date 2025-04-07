@@ -1,43 +1,46 @@
-import React, { useContext, useEffect, useState } from 'react'
+// App.js
+import React, { useContext, useEffect, useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import AppRouter from './components/AppRouter';
-
 import NavBar from './components/NavBar';
 import { observer } from 'mobx-react-lite';
 import { Spinner } from 'react-bootstrap';
 import { Context } from './index.js';
 import { check } from './https/userAPI';
-import { NavLink, useLocation,useNavigate } from 'react-router-dom';
-
+import Loading from './components/Loading.js'
+import { useNavigate } from 'react-router-dom';
+import ErrorPage from './ErrorHandlers/ErrorPage'; // Импорт страницы ошибки
 
 const App = observer(() => {
-  const {user} = useContext(Context)
-  const [loading,setLoading]=useState(true)
-  useEffect( ()=>{
-      check().then(data =>{
-      if(data!==undefined){
-      user.setUser(data)
-      user.setIsAuth(true)
-      
+  const { user, error } = useContext(Context);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    check().then(data => {
+      if (data) {
+        user.setUser(data);
+        user.setIsAuth(true);
       }
-    }).finally(()=>setLoading(false))
-  },[])
-  if(loading){
-    return (
-    <div 
-      className="d-flex justify-content-center align-items-center" 
-      style={{ height: '100vh' }}
-      >
-      <Spinner animation="grow" style={{ transform: 'scale(2)' }} />
-    </div>
-    )
+    }).finally(() => setLoading(false));
+  }, []);
+
+  // Перенаправление на страницу ошибки при изменении кода ошибки
+  useEffect(() => {
+    if (error.errorCode && error.errorMessage) {
+      navigate(`/error/${error.errorCode}`);
+    }
+  }, [error.errorCode],navigate);
+  console.log("код:"+error.errorCode+"; Cooбщение:"+error.errorMessage)
+  if (loading) {
+    return <Loading />;
   }
 
   return (
-    <BrowserRouter>
-      <NavBar/>
-      <AppRouter/>
-    </BrowserRouter>
+    <>
+      <NavBar />
+      <AppRouter />
+    </>
   );
 });
 

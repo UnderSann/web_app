@@ -122,19 +122,6 @@ class OrderController {
                 return next(ApiError.notFound('Заказ не найден'));
             }
             
-            if (!quantity || quantity <= 0) {
-                return next(ApiError.badRequest('Укажите количество'));
-            }
-            if (!colorId) {
-                return next(ApiError.badRequest('Укажите цвет'));
-            }
-            if (!number) {
-                return next(ApiError.badRequest('Укажите номер телефона'));
-            }
-            if (!isValidPhoneNumber(number)) {
-                return next(ApiError.badRequest('Неверный формат номера телефона'));
-            }
-            
             // Проверяем новый цвет, если он передан
             if (colorId !== undefined) {
                 const color = await Color.findByPk(colorId);

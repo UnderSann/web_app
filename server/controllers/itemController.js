@@ -211,6 +211,9 @@ class ItemController {
                     { model: Color, as: 'colors' }
                 ]
             });
+            if(!item){
+                next(ApiError.badRequest( "Товар не найден" ));
+            }
             // Возвращаем найденный предмет
             return res.json(item);
         } catch (e) {
@@ -234,7 +237,7 @@ class ItemController {
             });
     
             if (!item) {
-                return res.status(404).json({ message: "Товар не найден" });
+                next(ApiError.badRequest("Товар не найден" ));
             }
     
             // Удаляем файлы всех связанных изображений

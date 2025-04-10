@@ -3,6 +3,7 @@ import { SHOP_ROUTE } from '../utils/consts';
 
 export default class PathStore {
     _pathStack = []; // Изначально стек пустой
+    //ПО УМОЛЧАНИЮ ПУТЬ МАГАЗИНА
 
     constructor() {
         makeAutoObservable(this); // MobX отслеживает изменения
@@ -18,7 +19,7 @@ export default class PathStore {
         if (this._pathStack.length > 0) {
             return this._pathStack.pop(); // Исправлено: Удалить и вернуть последний маршрут
         }
-        return SHOP_ROUTE; // Если стек пустой, вернуть SHOP_ROUTE
+        return process.env.REACT_APP_MAIN_PAGE; // Если стек пустой, вернуть SHOP_ROUTE
     }
 
     // Получить текущий стек

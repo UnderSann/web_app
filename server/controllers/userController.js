@@ -15,11 +15,11 @@ class UserController{
     async registration(req,res,next){
         const {email, password, role} = req.body
         if(!email || !password){
-            return next(ApiError.badRequest('Неверный пароль или адресс электронной почты'))
+            return next(ApiError.light('Неверный пароль или адресс электронной почты'))
         }
         const candidate = await User.findOne({where:{email}})
         if(candidate){
-           return next(ApiError.badRequest('Данный почтовый адресс уже зарегистрирован'))
+           return next(ApiError.light('Данный почтовый адресс уже зарегистрирован'))
         }
         const hashPassword = await bcrypt.hash(password,5)
         const user = await User.create({email,role,password:hashPassword})
@@ -32,11 +32,11 @@ class UserController{
         const {email, password} = req.body
         const user = await User.findOne({where:{email}})
         if(!user){
-            return next(ApiError.badRequest('Пользователь с данным именем не найден'))
+            return next(ApiError.light('Пользователь с данным именем не найден'))
         }
         let comparePassword = bcrypt.compareSync(password, user.password)  
         if(!comparePassword){
-            return next(ApiError.badRequest('Неверный пароль'))
+            return next(ApiError.light('Неверный пароль'))
         }
         const token = generateJwt(user.id,user.email,user.role)
         return res.json({token})
@@ -52,7 +52,7 @@ class UserController{
         const user =await User.findOne({where:{id:userId}})
         const basket=await Basket.findOne({where:{userId}})
         if(!user){
-            return next(ApiError.badRequest('Данного пользователя не существует: '+userId))
+            return next(ApiError.light('Данного пользователя не существует: '+userId))
         }
         try{
             await BasketItem.destroy({ where: { basketId: basket.id } });
@@ -61,7 +61,7 @@ class UserController{
             }
             await user.destroy();
         }catch(e){
-            return next(ApiError.badRequest('Ошибка удаления '))
+            return next(ApiError.light('Ошибка удаления '))
         }
         return res.json({message:"Пользователь "+ userId + " удален"})
     }

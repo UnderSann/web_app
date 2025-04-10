@@ -19,14 +19,14 @@ const NavBar = observer(() => {
         localStorage.removeItem('token');
         setExpanded(false); 
         error.clearError();
-        navigate(SHOP_ROUTE);
+        navigate(process.env.REACT_APP_MAIN_PAGE);
     };
 
     const toMain = () => {
         item.setSelectedType({});
         setExpanded(false);
         error.clearError();
-        navigate(SHOP_ROUTE);
+        navigate(process.env.REACT_APP_MAIN_PAGE);
     };
 
     const handleNavClick = (path) => {

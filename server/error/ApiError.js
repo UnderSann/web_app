@@ -8,6 +8,10 @@ class ApiError extends Error{
     static badRequest(message){
         return new ApiError(404,message)
     }
+    //Custom
+    static light(message){
+        return new ApiError(333,message)
+    }
     static internal(message){
         return new ApiError(500,message)
     }

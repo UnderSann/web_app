@@ -201,7 +201,9 @@ class ItemController {
     async getOne(req, res, next) {
         try {
             const { id } = req.params;
-    
+            if(!id){
+                next(ApiError.badRequest( "Товар не найден" ));
+            }
             // Запрос к базе данных с использованием единого include
             const item = await Item.findOne({
                 where: { id },

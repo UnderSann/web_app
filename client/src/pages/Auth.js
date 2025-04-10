@@ -37,7 +37,7 @@ const Auth = observer(() => {
             }
             user.setUser(userData);
             user.setIsAuth(true);
-            navigate(SHOP_ROUTE)
+            navigate(process.env.REACT_APP_MAIN_PAGE)
         } catch (e) {
             setError(e.response.data.message);
         }

@@ -27,7 +27,9 @@ const App = observer(() => {
 
   // Перенаправление на страницу ошибки при изменении кода ошибки
   useEffect(() => {
-    if (error.errorCode && error.errorMessage) {
+    if ((error.errorCode && error.errorMessage) ||error.errorCode==404) {
+      console.log("errorCode: "+error.errorCode+"; errorMessage: "+error.errorMessage)
+
       navigate(`/error/${error.errorCode}`);
     }
   }, [error.errorCode],navigate);

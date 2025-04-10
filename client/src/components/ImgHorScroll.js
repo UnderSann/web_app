@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { Image } from 'react-bootstrap';
 import { observer } from 'mobx-react-lite';
-
+import Loading from './Loading'
 const ImgHorScroll = observer(({ item }) => {
     const scrollRef = useRef(null);
-    const images = item.imgs;
+    const images = item?.imgs || [];
+
 
     // Обработчик для горизонтального скролла
     const handleWheel = useCallback((e) => {
@@ -48,7 +49,9 @@ const ImgHorScroll = observer(({ item }) => {
                 ))
             ) : (
                 <div className="p-3 text-muted" style={{ minWidth: '100%' }}>
-                    Нет данных
+                    {(item?.imgs)&&
+                    "Нет данных"
+                    }
                 </div>
             )}
         </div>

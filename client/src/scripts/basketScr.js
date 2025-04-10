@@ -1,6 +1,9 @@
+import { useContext } from 'react';
 import { addToBasket, deleteFromBasket,clearBasket } from '../https/basketAPI';
+import { Context } from '..';
 
 export const useCartActions = (showToast) => {
+    const {error}=useContext(Context)
     const addToCart = async (user, item, basket) => {
         try {
             const data = await addToBasket(user.user.id, item.id, basket.page, basket.limit);
@@ -9,8 +12,8 @@ export const useCartActions = (showToast) => {
                 basket.setTotalCount(data.count);
                 showToast(`Добавлено в корзину: ${item.name}`, 'success');
             }
-        } catch (error) {
-            showToast("Ошибка добавления в корзину", 'danger');
+        } catch (e) {
+            showToast(error.errorLight, 'danger');
         }
     };
 
@@ -22,8 +25,8 @@ export const useCartActions = (showToast) => {
                 showToast(`Удалено из корзины: ${item.name}`, 'warning');    
             }
      
-        } catch (error) {
-            showToast("Ошибка удаления из корзины", 'danger');
+        } catch (e) {
+           showToast(error.errorLight, 'danger');
         }
     }
      const clearCart = async (user,basket) => {
@@ -34,8 +37,8 @@ export const useCartActions = (showToast) => {
                     basket.setPage(1)
                     showToast(`Карзина очищена`, 'warning');
                 });
-        }catch (error) {
-            showToast("Ошибка удаления из корзины", 'danger');
+        }catch (e) {
+            showToast(error.errorLight, 'danger');
         }
     };
 

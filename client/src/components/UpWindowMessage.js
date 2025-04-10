@@ -7,18 +7,21 @@ export const useToast = () => {
 
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
-        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+        setTimeout(() => setToast((prevToast) => ({ ...prevToast, show: false })), 3000);
     };
 
     return { toast, showToast };
 };
 
+
 // Компонент для отображения уведомлений
 export const UpWindowMessage = ({ toast }) => (
+    
     <ToastContainer
         className="position-fixed bottom-0 start-50 translate-middle-x p-3"
         style={{ zIndex: 1050, left: '50%', transform: 'translateX(-50%)' }}
     >
+        {(toast.message!==undefined||toast.message!=='') &&
         <Toast
             show={toast.show}
             style={{
@@ -30,5 +33,7 @@ export const UpWindowMessage = ({ toast }) => (
                 {toast.message}
             </Toast.Body>
         </Toast>
+        }
     </ToastContainer>
+        
 );

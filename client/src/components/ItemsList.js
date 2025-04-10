@@ -17,7 +17,7 @@ const ItemsList = observer(({ type }) => {
     let navigate=useNavigate()
     const toMain = () => {
         item.setSelectedType({})
-        navigate(SHOP_ROUTE)
+        navigate(process.env.REACT_APP_MAIN_PAGE)
     }
     let paramType
     if (type.id === -1) { 

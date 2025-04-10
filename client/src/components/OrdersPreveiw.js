@@ -190,6 +190,7 @@ const OrdersPreview = observer(({ orderItem }) => {
                 editOrder={orderItem}
                 onHide={() => setShowModal(false)} // Закрытие модального окна
             />
+
             <UpWindowMessage toast={toast} />
         </Card>
     );

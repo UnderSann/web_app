@@ -1,117 +1,120 @@
-const { Basket, BasketItem, Item, ItemImage,ItemInfo } = require('../models/models');
+const { Basket, BasketItem, Item, ItemImage, ItemInfo } = require('../models/models');
 const ApiError = require('../error/ApiError');
 
 class BasketController {
     // Получить корзину пользователя
     async getBasket(req, res, next) {
         try {
-            let { limit, page } = req.query;
             const { userId } = req.params;
-    
+            if (!userId) {
+                return next(ApiError.light("Вы не авторизованы"));
+            }
+
+            let { limit, page } = req.query;
+            page = page || 1;
+            limit = limit || 10;
+            const offset = (page - 1) * limit;
+
             let basket = await Basket.findOne({ where: { userId } });
             if (!basket) {
                 return res.json({ rows: [], count: 0 }); 
             }
-    
-            page = page || 1;
-            limit = limit || 10;
-            let offset = (page - 1) * limit;
-    
+
             const basketItems = await BasketItem.findAndCountAll({
                 where: { basketId: basket.id },
                 limit,
                 offset,
-                distinct: true, // Уникальный подсчёт записей
+                distinct: true,
                 order: [['createdAt', 'DESC']], 
                 include: [
                     {
                         model: Item,
                         include: [
-                            { model: ItemInfo, as: 'info' },  // Добавляем ItemInfo
-                            { model: ItemImage, as: 'imgs' } // Добавляем ItemImage
+                            { model: ItemInfo, as: 'info' },
+                            { model: ItemImage, as: 'imgs' }
                         ]
                     }
                 ]
             });
-    
+
             return res.json(basketItems);
         } catch (e) {
             next(ApiError.badRequest(e.message));
         }
     }
+
     async fetchOne(req, res, next) {
         try {
-            const { userId,itemId } = req.params;
-    
-            // Проверяем наличие корзины
+            const { userId, itemId } = req.params;
+
+            if (!userId) return next(ApiError.light("Вы не авторизованы"));
+            if (!itemId) return next(ApiError.light("Ошибка выбора товара"));
+
             const basket = await Basket.findOne({ where: { userId } });
             if (!basket) {
-                return res.json({ item: null }); // Возвращаем пустое значение, если корзины нет
+                return res.json({ item: null });
             }
-    
-            // Получаем один товар из корзины
+
             const basketItem = await BasketItem.findOne({
                 where: { basketId: basket.id, itemId },
                 include: [
                     {
                         model: Item,
                         include: [
-                            { model: ItemInfo, as: 'info' },  // Добавляем ItemInfo
-                            { model: ItemImage, as: 'imgs' },  // Добавляем ItemImage
+                            { model: ItemInfo, as: 'info' },
+                            { model: ItemImage, as: 'imgs' },
                         ]
                     }
                 ]
             });
-    
+
             return res.json(basketItem);
         } catch (e) {
             next(ApiError.badRequest(e.message));
         }
     }
-    
-    
 
     // Добавить товар в корзину
     async addToBasket(req, res, next) {
         try {
             let { userId, itemId, page = 1, limit = 10, quantity = 1 } = req.body;
 
-            // Находим корзину пользователя или создаем, если её нет
+            if (!userId) return next(ApiError.light("Вы не авторизованы"));
+            if (!itemId) return next(ApiError.light("Ошибка выбора товара"));
+
             let basket = await Basket.findOne({ where: { userId } });
             if (!basket) {
                 basket = await Basket.create({ userId });
             }
 
-            // Проверяем, есть ли уже этот товар в корзине
             let basketItem = await BasketItem.findOne({ where: { basketId: basket.id, itemId } });
 
             if (basketItem) {
-                basketItem.quantity += quantity; // Увеличиваем количество
+                basketItem.quantity += quantity;
                 await basketItem.save();
             } else {
                 basketItem = await BasketItem.create({ basketId: basket.id, itemId, quantity });
             }
-            page = page || 1;
-            limit = limit || 10;
-            let offset = (page - 1) * limit;
+
+            const offset = (page - 1) * limit;
 
             const basketItems = await BasketItem.findAndCountAll({
                 where: { basketId: basket.id },
                 limit,
                 offset,
-                distinct: true, // Уникальный подсчёт записей
+                distinct: true,
                 order: [['createdAt', 'DESC']], 
                 include: [
                     {
                         model: Item,
                         include: [
-                            { model: ItemInfo, as: 'info' },  // Добавляем ItemInfo
-                            { model: ItemImage, as: 'imgs' } // Добавляем ItemImage
+                            { model: ItemInfo, as: 'info' },
+                            { model: ItemImage, as: 'imgs' }
                         ]
                     }
                 ]
             });
-    
+
             return res.json(basketItems);
         } catch (e) {
             next(ApiError.badRequest(e.message));
@@ -122,40 +125,45 @@ class BasketController {
     async removeFromBasket(req, res, next) {
         try {
             const { userId, itemId, page = 1, limit = 10, toClear } = req.body;
-    
+
+            if (!userId) return next(ApiError.light("Вы не авторизованы"));
+            if (!itemId) return next(ApiError.light("Ошибка выбора товара"));
+
             const basket = await Basket.findOne({ where: { userId } });
             if (!basket) {
-                return next(ApiError.badRequest({ message: "Корзина не найдена" }));
+                return next(ApiError.light("Корзина не найдена"));
             }
-    
+
             const basketItem = await BasketItem.findOne({ where: { basketId: basket.id, itemId } });
-    
+
             if (!basketItem) {
-                return next(ApiError.badRequest({ message: "Товар не найден в корзине" }));
+                return next(ApiError.light("Товар не найден в корзине"));
             }
-            if(toClear){
-                basketItem.quantity=1;
+
+            if (toClear) {
+                basketItem.quantity = 1;
             }
+
             if (--basketItem.quantity <= 0) {
                 await basketItem.destroy();
             } else {
                 await basketItem.save(); 
             }
-    
-            
+
             const offset = (page - 1) * limit;
+
             const basketItems = await BasketItem.findAndCountAll({
-            where: { basketId: basket.id },
+                where: { basketId: basket.id },
                 limit,
                 offset,
-                distinct: true, // Уникальный подсчёт записей
-                order: [['createdAt', 'DESC']], 
+                distinct: true,
+                order: [['createdAt', 'DESC']],
                 include: [
                     {
                         model: Item,
                         include: [
-                            { model: ItemInfo, as: 'info' },  // Добавляем ItemInfo
-                            { model: ItemImage, as: 'imgs' } // Добавляем ItemImage
+                            { model: ItemInfo, as: 'info' },
+                            { model: ItemImage, as: 'imgs' }
                         ]
                     }
                 ]
@@ -173,10 +181,12 @@ class BasketController {
         try {
             const { userId } = req.body;
 
+            if (!userId) return next(ApiError.light("Вы не авторизованы"));
+
             const basket = await Basket.findOne({ where: { userId } });
 
             if (!basket) {
-                return  next(ApiError.badRequest({message: "Товар не найден в корзине" }));
+                return next(ApiError.light("Корзина не найдена"));
             }
 
             await BasketItem.destroy({ where: { basketId: basket.id } });

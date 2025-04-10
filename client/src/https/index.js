@@ -26,8 +26,12 @@ const responseErrorInterceptor = error => {
         }
         // Обновляем ошибку только если она изменилась
         if (errorStore.errorCode !== status || errorStore.errorMessage !== message) {
-            errorStore.setErrorCode(status);
-            errorStore.setErrorMessage(message);
+            if(status==333 ||status==401){
+                errorStore.setErrorLight(message);
+            }else{
+                errorStore.setErrorCode(status);
+                errorStore.setErrorMessage(message);
+            }
         }
     } else {
         if (errorStore.errorCode !== 500 || errorStore.errorMessage !== 'Произошла ошибка на сервере') {

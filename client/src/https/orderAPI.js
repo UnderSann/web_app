@@ -8,15 +8,29 @@ export const createOrder = async ( userId, itemId,  quantity, colorId, text, ins
     return data
 }
 
-export const fetchOrders = async () =>{
-    const {data} = await $authHost.get('api/order/')
+export const fetchOrders = async (page=1,limit=5) =>{
+    const {data} = await $authHost.get('api/order/',{params:{
+        page, limit
+    }})
     return data
 }
 export const fetchUserOrders = async (userId) =>{
-    
     const {data} = await $authHost.get(`api/order/${userId}`)
     return data
 }
+export const doComfirmed = async (orderId, page = 1, limit = 5) => {
+    const { data } = await $authHost.post('api/order/comfirmed', {
+        orderId, page, limit
+    });
+    return data;
+};
+
+export const doDone = async (orderId, page = 1, limit = 5) => {
+    const { data } = await $authHost.post('api/order/done', {
+        orderId, page, limit
+    });
+    return data;
+};
 
 export const deleteOrder = async (id) =>{
     const {data} = await $authHost.delete(`api/order/delete/${id}`)

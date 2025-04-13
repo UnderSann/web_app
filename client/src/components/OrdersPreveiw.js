@@ -1,38 +1,20 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { Card, Image, Button } from 'react-bootstrap';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ITEM_ROUTE } from '../utils/consts';
 import { observer } from 'mobx-react-lite';
-import { Trash, Pen } from 'react-bootstrap-icons';
-import { deleteOrder, fetchUserOrders } from '../https/orderAPI';
-import { fetchOneItem,setItems } from '../https/itemAPI';
+import { Trash, Pen, Check2, Wrench } from 'react-bootstrap-icons';
+import { deleteOrder, fetchUserOrders, doComfirmed, doDone } from '../https/orderAPI';
+import { fetchOneItem } from '../https/itemAPI';
 import { Context } from '..';
 import { useToast, UpWindowMessage } from '../components/UpWindowMessage';
-import PhoneInput from 'react-phone-number-input';
-import parsePhoneNumber from 'libphonenumber-js';
-import 'react-phone-number-input/style.css';
 import OrderModal from './OrderModal';
 import Loading from './Loading';
 
-const OrdersPreview = observer(({ orderItem }) => {
+const OrdersPreview = observer(({ orderItem, admin = false }) => {
     const { user, order, item } = useContext(Context);
     const navigate = useNavigate();
     const { toast, showToast } = useToast();
-    useEffect(() => {
-        const fetchItem = async () => {
-            try {
-                const data = await fetchOneItem(orderItem.itemId);
-                if (data) {
-                    item.setItems(data);
-                    console.log(data.name);
-                }
-            } catch (err) {
-                console.error("Ошибка при получении item:", err);
-            }
-        };
-    
-        fetchItem();
-    }, [orderItem.itemId]); // будет вызываться только при изменении itemId
     const [showModal, setShowModal] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isOverflowing, setIsOverflowing] = useState(false);
@@ -40,10 +22,17 @@ const OrdersPreview = observer(({ orderItem }) => {
     const textRef = useRef(null);
 
     useEffect(() => {
+        if (!admin) {
+            fetchOneItem(orderItem.itemId)
+                .then(data => data && item.setItems(data))
+                .catch(err => console.error("Ошибка при получении item:", err));
+        }
+    }, [orderItem.itemId]);
+
+    useEffect(() => {
         const el = textRef.current;
         if (el) {
-            const isTextOverflowing = el.scrollHeight > el.clientHeight + 1; // небольшой запас
-            setIsOverflowing(isTextOverflowing);
+            setIsOverflowing(el.scrollHeight > el.clientHeight + 1);
         }
     }, [orderItem.text]);
 
@@ -53,7 +42,6 @@ const OrdersPreview = observer(({ orderItem }) => {
     };
 
     const handleCardClick = (e) => {
-        // Останавливаем клик, если модальное окно открыто
         if (e.target.tagName === "BUTTON" || e.target.closest("button") || showModal) return;
         navigate(ITEM_ROUTE + '/' + orderItem.item.id);
     };
@@ -63,7 +51,10 @@ const OrdersPreview = observer(({ orderItem }) => {
             const data = await deleteOrder(orderItem.id);
             if (data) {
                 const fetchData = await fetchUserOrders(user.user.id);
-                if (fetchData) {
+                if (admin) {
+                    order.setOrder(data.rows);
+                    order.setTotalCount(data.count);
+                } else {
                     order.setOrder(fetchData);
                 }
                 showToast(data.message);
@@ -74,35 +65,113 @@ const OrdersPreview = observer(({ orderItem }) => {
         }
     };
 
+    const Comfirmed = async () => {
+        try {
+            const data = await doComfirmed(orderItem.id, order.page, order.limit);
+            if (data) {
+                order.setOrder(data.rows);
+                order.setTotalCount(data.count);
+            }
+        } catch (e) {
+            console.error("Ошибка заказа в процессе:", e.response?.data?.message || e.message);
+        }
+    };
+
+    const Done = async () => {
+        try {
+            const data = await doDone(orderItem.id, order.page, order.limit);
+            if (data) {
+                order.setOrder(data.rows);
+                order.setTotalCount(data.count);
+            }
+        } catch (e) {
+            console.error("Ошибка подтверждения заказа:", e.response?.data?.message || e.message);
+        }
+    };
+
     return (
         <Card
             key={orderItem.id}
-            className="m-2 d-flex flex-row align-items-center"
+            className="m-2"
             style={{
-                minWidth: 400,
+                minWidth: 300,
                 maxWidth: 800,
-                minHeight: 200,
-                whiteSpace: "normal",
-                wordWrap: "break-word",
-                pointerEvents: showModal ? 'none' : 'auto', // отключаем клики на карточке при открытом модальном окне
+                backgroundColor: orderItem.done
+                    ? 'rgba(0, 255, 0, 0.1)'
+                    : orderItem.comfirmed
+                        ? 'rgba(255, 255, 0, 0.1)'
+                        : 'white',
+                pointerEvents: showModal ? 'none' : 'auto',
             }}
             border="dark"
+            onClick={handleCardClick}
         >
-            <div className="d-flex flex-row align-items-start w-100">
+            <div className="d-flex w-100 p-2">
+                {/* Картинка */}
+                <div className="d-flex flex-column" style={{ flexShrink: 0 }}>
                 <Image
-                    className="me-3"
-                    width={190}
-                    height={190}
                     src={process.env.REACT_APP_API_URL + orderItem.item.imgs[0].img}
-                    style={{ objectFit: 'cover' }}
+                    style={{
+                        width: '190px',
+                        height: '190px',
+                        objectFit: 'cover',
+                        borderRadius: '4px',
+                        objectPosition: 'center center'
+                    }}
                 />
-                <div className="d-flex flex-column flex-grow-1">
-                    <div className="text-start fw-bold">{orderItem.item.name}</div>
-                    <div className="text-start text-muted position-relative">
+
+
+                    <div className="d-flex justify-content-between align-items-center mt-2">
+                       
+                       {/* <div className="text-muted">Кол-во: {orderItem.quantity}</div>*/}
+                    </div>
+
+                    <div className="d-flex justify-content-start mt-1 flex-wrap">
+                        {admin && (
+                            <Button
+                                variant="outline-dark"
+                                className="me-2 mb-2"
+                                style={{ width: 40, height: 40 }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    Done();
+                                }}
+                            >
+                                <Check2 />
+                            </Button>
+                        )}
+                        <Button
+                            variant="outline-dark"
+                            className="me-2 mb-2"
+                            style={{ width: 40, height: 40 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                !admin ? setShowModal(true) : Comfirmed();
+                            }}
+                        >
+                            {!admin ? <Pen /> : <Wrench />}
+                        </Button>
+                        <Button
+                            variant="outline-dark"
+                            className="mb-2"
+                            style={{ width: 40, height: 40 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                delOrder();
+                            }}
+                        >
+                            <Trash />
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Текст и остальная инфа */}
+                <div className="d-flex flex-column ms-3 flex-grow-1">
+                    <div className="fw-bold">{orderItem.item.name+" - "+orderItem.item.price} BYN</div>
+                    <div className="text-muted position-relative">
                         <div
                             ref={textRef}
                             style={{
-                                maxWidth: '80%',
                                 overflow: isExpanded ? 'visible' : 'hidden',
                                 display: '-webkit-box',
                                 WebkitLineClamp: isExpanded ? 'unset' : 3,
@@ -138,7 +207,7 @@ const OrdersPreview = observer(({ orderItem }) => {
                             </div>
                         )}
                     </div>
-                    <div className="text-start text-muted">
+                    <div className="text-muted mt-2">
                         Цвет: {orderItem.color.name}
                         <span
                             style={{
@@ -152,47 +221,22 @@ const OrdersPreview = observer(({ orderItem }) => {
                             }}
                         ></span>
                     </div>
-                    <div className="text-start text-muted">
-                        {orderItem.number}
-                    </div>
-                    <div className="text-start text-muted">
-                        Instagram:{" "+orderItem.insta}
-                    </div>
-                </div>
-
-                <div
-                    className="d-flex flex-column justify-content-between align-items-end ms-auto me-2"
-                    style={{ width: 100, minWidth: 100 }}
-                >
-                    <div>{orderItem.item.price} BYN</div>
-                    <div className="text-muted">Кол-во: {orderItem.quantity}</div>
-
-                    <Button
-                        variant="outline-dark"
-                        className="m-1"
-                        style={{ width: 50, height: 40 }}
-                        onClick={() => setShowModal(true)}
-                    >
-                        <Pen />
-                    </Button>
-                    <Button
-                        variant="outline-dark"
-                        className="m-1"
-                        style={{ width: 50, height: 40 }}
-                        onClick={() => delOrder()}
-                    >
-                        <Trash />
-                    </Button>
+                    <div className="text-muted mt-1">{orderItem.number}</div>
+                    <div className="text-muted mt-1">Instagram: {orderItem.insta}</div>
                 </div>
             </div>
-            <OrderModal
-                show={showModal}
-                editOrder={orderItem}
-                onHide={() => setShowModal(false)} // Закрытие модального окна
-            />
+
+            {!admin && (
+                <OrderModal
+                    show={showModal}
+                    editOrder={orderItem}
+                    onHide={() => setShowModal(false)}
+                />
+            )}
 
             <UpWindowMessage toast={toast} />
         </Card>
+
     );
 });
 

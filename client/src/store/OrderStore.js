@@ -3,32 +3,39 @@ import { makeAutoObservable } from 'mobx';
 export default class OrderStore {
     constructor() {
         this._orders = []; 
-        this._userLimit = 30;
-        this._limit = 30;
+        this._page = 1;
+        this._limit = 5;
+        this._totalCount = 0;
         makeAutoObservable(this);
     }
-
-    setOrder(orders) {
-        this._orders = orders; 
+    setTotalCount(totalCount) {
+        this._totalCount = totalCount;
     }
 
-    setUserLimit(userLimit) {
-        this._userLimit = userLimit;
+
+    setPage(page) {
+        this._page = page;
     }
 
     setLimit(limit) {
         this._limit = limit;
     }
-
+    setOrder(orders) {
+        this._orders = orders; 
+    }
     get orders() {
         return this._orders;
     }
 
-    get userLimit() {
-        return this._userLimit;
+    get page() {
+        return this._page;
     }
 
     get limit() {
         return this._limit;
+    }
+    
+    get totalCount() {
+        return this._totalCount;
     }
 }

@@ -57,7 +57,7 @@ class OrderController {
 
     async fetchAllUsers(req, res, next) {
         try {
-            const userId = Number(req.params.userId); // Приводим к числу
+            const { userId } = req.params; // Приводим к числу
             if (!userId) {
                 return next(ApiError.badRequest("Некорректный userId"));
             }
@@ -87,10 +87,117 @@ class OrderController {
 
     async fetchAll(req, res, next) {
         try {
-            const orders = await Order.findAll({
+            let { limit, page } = req.query;
+            page = page || 1;
+            limit = limit || 10;
+            const offset = (page - 1) * limit;
+            const orders = await Order.findAndCountAll({
+                limit,
+                offset,
+                distinct: true,
                 order: [['createdAt', 'DESC']],
-                include: [User, Item, Color] // Добавляем информацию о пользователе, товаре и цвете
+                include: [
+                    {
+                        model: Item,
+                        include: [
+                            { model: ItemImage, as: 'imgs' }
+                        ]
+                    },
+                    {
+                        model: Color
+                    }
+                ]
             });
+    
+            return res.json(orders);
+        } catch (e) {
+            next(ApiError.badRequest('Ошибка: ' + e.message));
+        }
+    }
+    
+    async inWork(req, res, next) {
+        try {
+            let { orderId, limit, page } = req.body;
+            console.log('\n'+orderId+'\n')
+            page = parseInt(page) || 1;
+            limit = parseInt(limit) || 10;
+    
+            if (!orderId) {
+                return next(ApiError.badRequest('Заказ не найден'));
+            }
+    
+            // Найти заказ и инвертировать confirmed
+            const order = await Order.findOne({ where: { id: orderId } })
+            if (!order) {
+                return next(ApiError.badRequest('Заказ с таким ID не найден'));
+            }
+    
+            order.comfirmed = !order.comfirmed;
+            await order.save();
+    
+            const offset = (page - 1) * limit;
+            const orders = await Order.findAndCountAll({
+                limit,
+                offset,
+                distinct: true,
+                order: [['createdAt', 'DESC']],
+                include: [
+                    {
+                        model: Item,
+                        include: [
+                            { model: ItemImage, as: 'imgs' }
+                        ]
+                    },
+                    {
+                        model: Color
+                    }
+                ]
+            });
+    
+            return res.json(orders);
+        } catch (e) {
+            next(ApiError.badRequest('Ошибка: ' + e.message));
+        }
+    }
+
+    async isDone(req, res, next) {
+        try {
+            let { orderId, limit, page } = req.body;
+            page = parseInt(page) || 1;
+            limit = parseInt(limit) || 10;
+    
+            if (!orderId) {
+                return next(ApiError.badRequest('Заказ не найден'));
+            }
+    
+            // Найти заказ и инвертировать confirmed
+            const order = await Order.findOne({ where: { id: orderId } })
+            if (!order) {
+                return next(ApiError.badRequest('Заказ с таким ID не найден'));
+            }
+    
+            order.done = !order.done;
+            await order.save();
+    
+            const offset = (page - 1) * limit;
+            const orders = await Order.findAndCountAll({
+                limit,
+                offset,
+                distinct: true,
+                order: [['createdAt', 'DESC']],
+                include: [
+                    {
+                        model: Item,
+                        include: [
+                            { model: ItemImage, as: 'imgs' }
+                        ]
+                    },
+                    {
+                        model: Color
+                    }
+                ]
+            });
+    
             return res.json(orders);
         } catch (e) {
             next(ApiError.badRequest('Ошибка: ' + e.message));
@@ -129,7 +236,7 @@ class OrderController {
                     return next(ApiError.notFound('Цвет не найден'));
                 }
             }
-
+            
             // Обновляем только переданные поля
             await order.update({
                 quantity: quantity !== undefined ? quantity : order.quantity,

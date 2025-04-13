@@ -43,7 +43,10 @@ const ItemPreveiw = observer(({ item }) => {
             {/* Изображение по центру */}
             <Image 
                 className="p-1 mx-auto d-block" 
-                width={240} height={290} 
+                width={245} height={290} 
+                style={{ objectFit: 'cover',
+                    borderRadius: '4px',
+                    objectPosition: 'center center',}}
                 src={process.env.REACT_APP_API_URL + item.imgs[0].img} 
             />
 

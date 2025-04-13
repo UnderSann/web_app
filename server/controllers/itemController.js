@@ -174,7 +174,8 @@ class ItemController {
                 distinct: true, // Уникальный подсчёт записей
                 include: [
                     { model: ItemInfo, as: 'info', required: false }, // Включаем данные info
-                    { model: ItemImage, as: 'imgs', required: false } // Включаем данные imgs
+                    { model: ItemImage, as: 'imgs', required: false }, // Включаем данные imgs
+                    { model: Color, as: 'colors', required: false  }
                 ]
             };
     

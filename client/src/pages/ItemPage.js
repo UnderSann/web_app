@@ -20,7 +20,7 @@ const ItemPage = observer(() => {
     const { item, basket, user, paths, order,error } = useContext(Context);
     const [loadingItem, setLoadingItem] = useState(false);
     const [showModal, setShowModal] = useState(false);
-
+    const isMobile = window.innerWidth < 768;
     const navigate = useNavigate();
     const { id } = useParams();
     useEffect(() => {
@@ -64,17 +64,22 @@ const ItemPage = observer(() => {
 
     // Переход к рендерингу данных после их загрузки
     return (
-        <Container style={{ paddingTop: '80px' }}>
+        <Container style={{ paddingTop: '70px' }}>
             
             <ArrowLeft 
-                className="position-fixed start-0 top-30 translate-middle-y z-3"
-                style={{ marginLeft: 10, marginTop: 20, width: 30, height: 30, background: 'white' }} 
+                className="position-fixed start-0  translate-middle-y z-3"
+                style={{ marginLeft: 10, marginTop: 20, width: 30, height: 30}} 
                 onClick={back}
             />
             {!error.errorCode && !error.errorMessage  &&
             <Row>
                 {/* Название товара и цена */}
-                <h1 className="mb-0 text-start">{item.items?.name + " - " + item.items?.price} BYN</h1>
+                <h1
+                    className="mb-0 text-start"
+                    style={{ marginLeft: isMobile ? '30px' : '0px' }}
+                >
+                    {item.items?.name + " - " + item.items?.price} BYN
+                </h1>
                 <ImgHorScroll item={item.items}/>
                 {/* Кнопки заказа */}
                 <Button variant="outline-dark" className="flex-grow-1 m-2" onClick={() => {user.isAuth?setShowModal(true):showToast("Вы не авторизованы",'text-danger')}}>

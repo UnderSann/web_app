@@ -170,7 +170,7 @@ const handleSubmit = async () => {
             const removeCount = Math.min(quantity, itemsInBasket);
 
             for (let i = 0; i < removeCount; i++) {
-                const data = await deleteFromBasket(user.user.id, item.items.id, basket.page, basket.limit, 1);
+                const data = await deleteFromBasket(user.user.id, item.items.id, basket.page, basket.limit, 0);
                 if (data) {
                     basket.setBasketItems(data.rows);
                     itemsInBasket--;

@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Context } from '..';
 import { Button, Container, Form, Nav, Navbar, NavDropdown } from 'react-bootstrap';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { SHOP_ROUTE, LOGIN_ROUTE, BASKET_ROUTE, ORDER_ROUTE } from '../utils/consts';
+import { SHOP_ROUTE, LOGIN_ROUTE, BASKET_ROUTE, ORDER_ROUTE, ADMIN_ROUTE } from '../utils/consts';
 import { observer } from 'mobx-react-lite';
 import { Cart } from 'react-bootstrap-icons';
 
@@ -50,10 +50,10 @@ const NavBar = observer(() => {
                                 <Button className="m-1" variant="outline-dark" as={NavLink} to={ORDER_ROUTE} onClick={() => handleNavClick(ORDER_ROUTE)}>
                                     Заказы
                                 </Button>
-                                <Button className="m-2" variant="outline-dark" as={NavLink} to={BASKET_ROUTE} onClick={() => handleNavClick(BASKET_ROUTE)}>
+                                <Button className="m-1" variant="outline-dark" as={NavLink} to={BASKET_ROUTE} onClick={() => handleNavClick(BASKET_ROUTE)}>
                                     <Cart />
                                 </Button>
-                                <Button className="m-1" variant="outline-dark">Панель администратора</Button>
+                                <Button className="m-1" variant="outline-dark" onClick={() => handleNavClick(ADMIN_ROUTE)}>Панель администратора</Button>
                                 <Button className="m-1" variant="outline-dark" onClick={() => logOut()}>
                                     Выйти
                                 </Button>

@@ -20,6 +20,7 @@ const Basket =  observer(() =>{
     const { paths } = useContext(Context);
     const { toast, showToast } = useToast(); // Хук вызывается здесь
     const { clearCart } = useCartActions(showToast); // Передаем showToast
+    const isMobile = window.innerWidth < 768;
 
     const {user}=useContext(Context)
     const userId=user.user.id
@@ -49,35 +50,41 @@ const Basket =  observer(() =>{
                             marginTop:20, 
                             width:30,
                             height:30,
-                            background:'white'
+                           // background:'white'
                         }} 
                         onClick={() => toMain()}
             />
              <Button
                 variant="outline-dark"
-                className="m-1"
                 style={{
-                    width: 100,
+                    width: 90,
                     height: 40,
                     position: 'fixed',
-                    right: '20px',
-                    top: 100,
+                    right: '10px',
+                    textAlign:'center',
+                    top: 82,
                     zIndex: 10,
                     background:'white',
                     color: 'black'
                 }}
                 onClick={() =>clearCart(user,basket) }
             >
-                Очистить
+            Очистить
             </Button>
             <UpWindowMessage toast={toast} /> 
-          <Row  className="d-flex justify-content-center align-items-center mt-1">
+            <Row
+                className="d-flex justify-content-center align-items-center"
+                style={{ marginTop: isMobile ? '40px' : '20px' ,
+                padding: '0 5px' 
+                }}
+            >
+
             {basket.basketItems.length !== 0 ? (
                 basket.basketItems.map((basketItem) => (
                     <ItemPreveiw_2 
                         isBasket={true} 
                         key={basketItem.id}
-                        item={basketItem.item}
+                        Item={basketItem.item}
                         quantity={basketItem.quantity}
                     />
                 ))

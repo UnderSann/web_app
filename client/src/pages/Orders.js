@@ -12,7 +12,7 @@ const Orders = observer(() => {
     const { order, paths, user } = useContext(Context);
     const navigate = useNavigate();
     const [loadingItems, setLoadingItems] = useState(true);
-
+    const isMobile = window.innerWidth < 768;
     useEffect(() => {
         const loadOrders = async () => {
             if (!user?.user?.id) return;
@@ -35,18 +35,21 @@ const Orders = observer(() => {
     return (
         <Container style={{ paddingTop: '80px' }}>
             <ArrowLeft 
-                className="position-fixed start-0 top-30 translate-middle-y z-3"
+                className="position-fixed m-1 start-0 top-30 translate-middle-y z-3"
                 style={{
                     marginLeft: 10, 
                     marginTop: 20, 
                     width: 30,
                     height: 30,
-                    background: 'white'
+                 //   background: 'white'
                 }} 
                 onClick={() => navigate(paths.pop())}
             />
 
-            <Row className="d-flex justify-content-center align-items-center mt-1">
+            <Row className="d-flex justify-content-center  align-items-center"
+             style={{ marginTop: isMobile ? '10px' : '5px' ,
+                padding: '0 5px' }}
+                >
                 {order.orders.length !== 0 ? (
                     order.orders.map((orderItem) => (
                         <OrdersPreveiw orderItem={orderItem} key={orderItem.id}></OrdersPreveiw>

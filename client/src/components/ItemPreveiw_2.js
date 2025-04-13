@@ -9,12 +9,12 @@ import { useCartActions } from '../scripts/basketScr';
 import { useToast, UpWindowMessage } from '../components/UpWindowMessage';
 import CartButton from './CartTrashButton';
 
-const ItemPreview_2 = observer(({ item, isBasket = 0, quantity=0}) => {
+const ItemPreview_2 = observer(({ Item, isBasket = 0, quantity=0}) => {
     const navigate = useNavigate();
 
     const { toast, showToast } = useToast(); // Хук вызывается здесь
     const { addToCart,deleteFromCart } = useCartActions(showToast); // Передаем showToast
-    const { basket } = useContext(Context);
+    const { basket, item } = useContext(Context);
     const { paths } = useContext(Context);
     const {user}=useContext(Context);
     const location = useLocation();
@@ -23,11 +23,11 @@ const ItemPreview_2 = observer(({ item, isBasket = 0, quantity=0}) => {
         return;
         }
         paths.push(location.pathname);
-        navigate(ITEM_ROUTE + '/' + item.id);
+        navigate(ITEM_ROUTE + '/' + Item.id);
     };
   return (
     <Card
-      key={item.id}
+      key={Item.id}
       className="m-2 d-flex flex-row align-items-center"
       style={{
         minWidth: 400,
@@ -42,26 +42,32 @@ const ItemPreview_2 = observer(({ item, isBasket = 0, quantity=0}) => {
     >
       <div className="d-flex flex-row align-items-start w-100">
         {/* Картинка слева */}
-        <Image
-          className="me-3"
-          width={190}
-          height={190}
-          src={process.env.REACT_APP_API_URL + item.imgs[0].img}
-          style={{ objectFit: 'cover' }}
-        />
+       <Image
+        src={process.env.REACT_APP_API_URL + Item.imgs[0].img}
+        style={{
+            width: '190px',
+            height: '190px',
+            objectFit: 'cover',
+            borderRadius: '4px',
+            objectPosition: 'center center',
+        }}
+    />
         
         {/* Блок с названием и описанием */}
-        <div className="d-flex flex-column flex-grow-1">
-          <div className="text-start">{item.name}</div>
-          <div className="text-start text-muted">{item.description}</div>
+        <div className="d-flex flex-column flex-grow-1 ms-3 justify-content-between">
+          <div className="text-start ">{Item.name}</div>
+          <div className="text-muted">
+            {item.types.find(t => t.typeId === Item.typeId)?.name || 'Тип не найден'}
+          </div>
         </div>
 
-        {/* Цена и количество справа */}
         <div className="d-flex flex-column justify-content-center text-end ms-auto m-2">
-          <div>{item.price} BYN</div>
-        </div>
-
-        {isBasket ? (
+        {/* Цена сверху */}
+        <div className="">{Item.price} BYN</div>
+        <div className="d-flex align-items-center justify-content-end mt-2 gap-2">
+        {/* Блок управления количеством в строку */}
+        {isBasket && (
+          <>
           <div className="d-flex flex-column align-items-center me-2">
             <Button variant="light" size="sm" 
             className="p-0 border-0"
@@ -76,11 +82,14 @@ const ItemPreview_2 = observer(({ item, isBasket = 0, quantity=0}) => {
               <TriangleFill size={16} style={{ transform: 'rotate(180deg)' }} />
             </Button>       
             </div>
-        ) : null}
-            
-        <CartButton item={item} isBasket={isBasket} addToCart={addToCart} deleteFromCart={deleteFromCart}/>
-        <UpWindowMessage toast={toast} />
+            </>
+        )}
+         {/* Кнопка удалить (мусорка) */}
+         <CartButton item={Item} isBasket={isBasket} addToCart={addToCart} deleteFromCart={deleteFromCart}/>
+         </div>
       </div>
+      </div>
+      <UpWindowMessage toast={toast} />
     </Card>
   );
 });

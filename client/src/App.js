@@ -16,6 +16,7 @@ const App = observer(() => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+
   useEffect(() => {
     check().then(data => {
       if (data) {

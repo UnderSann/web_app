@@ -42,8 +42,11 @@ const ImgHorScroll = observer(({ item }) => {
                     <Image
                         key={img.id}
                         className="p-1 mx-auto d-block"
-                        width={300}
-                        height={350}
+                        width={320}
+                        height={340}
+                        style={{ objectFit: 'cover',
+                            borderRadius: '4px',
+                            objectPosition: 'center center',}}
                         src={process.env.REACT_APP_API_URL + img.img}
                     />
                 ))

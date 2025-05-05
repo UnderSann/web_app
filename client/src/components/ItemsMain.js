@@ -31,7 +31,6 @@ const ItemsMain = observer(() => {
             {/* Передаём корректный пустой объект, но создаём его в самом компоненте */}
             <ItemsHorScroll type={{ name: "Все товары", id: -1 }} />
 
-            {/* Исправляем map() */}
             {item.types.map(type => (
                 <ItemsHorScroll key={type.id} type={type} />
             ))}

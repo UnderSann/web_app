@@ -1,6 +1,7 @@
 const { Order, Item, User, ItemImage, Color } = require('../models/models');
 const ApiError = require('../error/ApiError');
 const { isValidPhoneNumber } = require('libphonenumber-js');
+const { broadcastOrderUpdate } = require('../')
 class OrderController {
     // Создание заказа
     async create(req, res, next) {
@@ -48,7 +49,7 @@ class OrderController {
                 insta,
                 number
             });
-
+            //broadcastOrderUpdate({ type: 'created', order });
             return res.json(order);
         } catch (e) {
             return next(ApiError.internal('Ошибка при создании заказа, проверьте поля'));
@@ -87,15 +88,16 @@ class OrderController {
 
     async fetchAll(req, res, next) {
         try {
-            let { limit, page } = req.query;
+            let { limit, page, all=false } = req.query;
             page = page || 1;
             limit = limit || 10;
             const offset = (page - 1) * limit;
             const orders = await Order.findAndCountAll({
+                where:{done:all},
                 limit,
                 offset,
                 distinct: true,
-                order: [['createdAt', 'DESC']],
+                order: [['createdAt', 'ASC']],
                 include: [
                     {
                         model: Item,
@@ -117,10 +119,8 @@ class OrderController {
     
     async inWork(req, res, next) {
         try {
-            let { orderId, limit, page } = req.body;
-            console.log('\n'+orderId+'\n')
-            page = parseInt(page) || 1;
-            limit = parseInt(limit) || 10;
+            let { orderId } = req.body;
+
     
             if (!orderId) {
                 return next(ApiError.badRequest('Заказ не найден'));
@@ -135,26 +135,8 @@ class OrderController {
             order.comfirmed = !order.comfirmed;
             await order.save();
     
-            const offset = (page - 1) * limit;
-            const orders = await Order.findAndCountAll({
-                limit,
-                offset,
-                distinct: true,
-                order: [['createdAt', 'DESC']],
-                include: [
-                    {
-                        model: Item,
-                        include: [
-                            { model: ItemImage, as: 'imgs' }
-                        ]
-                    },
-                    {
-                        model: Color
-                    }
-                ]
-            });
-    
-            return res.json(orders);
+            //broadcastOrderUpdate({ type: 'status_changed', status: 'confirmed', orderId: order.id, value: order.comfirmed });
+            return res.json({ message: 'Заказ делаеться' });
         } catch (e) {
             next(ApiError.badRequest('Ошибка: ' + e.message));
         }
@@ -162,9 +144,7 @@ class OrderController {
 
     async isDone(req, res, next) {
         try {
-            let { orderId, limit, page } = req.body;
-            page = parseInt(page) || 1;
-            limit = parseInt(limit) || 10;
+            let { orderId} = req.body;
     
             if (!orderId) {
                 return next(ApiError.badRequest('Заказ не найден'));
@@ -178,27 +158,11 @@ class OrderController {
     
             order.done = !order.done;
             await order.save();
-    
-            const offset = (page - 1) * limit;
-            const orders = await Order.findAndCountAll({
-                limit,
-                offset,
-                distinct: true,
-                order: [['createdAt', 'DESC']],
-                include: [
-                    {
-                        model: Item,
-                        include: [
-                            { model: ItemImage, as: 'imgs' }
-                        ]
-                    },
-                    {
-                        model: Color
-                    }
-                ]
-            });
-    
-            return res.json(orders);
+           
+            
+            //broadcastOrderUpdate({ type: 'status_changed', status: 'done', orderId: order.id, value: order.done });
+
+            return res.json({ message: 'Заказ готов' });
         } catch (e) {
             next(ApiError.badRequest('Ошибка: ' + e.message));
         }
@@ -214,6 +178,8 @@ class OrderController {
             }
 
             await order.destroy();
+
+            //broadcastOrderUpdate({ type: 'deleted', id });
             return res.json({ message: 'Заказ успешно удален' });
         } catch (e) {
             return next(ApiError.badRequest('Ошибка при удалении заказа:'+e.message));
@@ -246,6 +212,7 @@ class OrderController {
                 colorId: colorId !== undefined ? colorId : order.colorId
             });
 
+            //broadcastOrderUpdate({ type: 'updated', order });
             return res.json(order);
         } catch (e) {
             return next(ApiError.internal('Ошибка при обновлении заказа'));

@@ -8,9 +8,9 @@ export const createOrder = async ( userId, itemId,  quantity, colorId, text, ins
     return data
 }
 
-export const fetchOrders = async (page=1,limit=5) =>{
+export const fetchOrders = async (page=1,limit=5,all=false) =>{
     const {data} = await $authHost.get('api/order/',{params:{
-        page, limit
+        page, limit,all
     }})
     return data
 }
@@ -18,16 +18,16 @@ export const fetchUserOrders = async (userId) =>{
     const {data} = await $authHost.get(`api/order/${userId}`)
     return data
 }
-export const doComfirmed = async (orderId, page = 1, limit = 5) => {
+export const doComfirmed = async (orderId) => {
     const { data } = await $authHost.post('api/order/comfirmed', {
-        orderId, page, limit
+        orderId
     });
     return data;
 };
 
-export const doDone = async (orderId, page = 1, limit = 5) => {
+export const doDone = async (orderId) => {
     const { data } = await $authHost.post('api/order/done', {
-        orderId, page, limit
+        orderId
     });
     return data;
 };

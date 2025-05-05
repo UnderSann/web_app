@@ -35,10 +35,14 @@ class ErrorStore {
   }
 
   get errorLight() {
-    const buf=this._errorLight;
-    this._errorLight=null;
-    return buf;
+    return this._errorLight;
   }
+  
+  clearErrorLight() {
+    this._errorLight = null;
+    this._errorCode = null;
+  }
+  
 }
 
 export default new ErrorStore();

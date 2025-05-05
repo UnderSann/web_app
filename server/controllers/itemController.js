@@ -1,76 +1,126 @@
 const uuid = require('uuid');
 const path = require('path');
 const fs = require('fs');
-const { Item,ItemInfo, BasketItem,ItemImage,Type,Color,Order } = require('../models/models');
+const { Item,ItemInfo, BasketItem,ItemImage,Type,Color,Order,ColorItemConnector  } = require('../models/models');
 const ApiError = require('../error/ApiError');
 
 class ItemController {
     async create(req, res, next) {
-        let filePath; // Объявляем заранее
+        let fileRecords = []; 
+        let item = null;
+        let errorText='';
         try {
-            let { name, price, typeId, info } = req.body;
-            const { img } = req.files;
-            const type= await Type.findOne({where:{typeId}})
-            if(!type){
-                return next(ApiError.badRequest("Нет такого типа"));
-            }
-            // Создаём Item
-            const item = await Item.create({ name, price, typeId });
-    
-            // Обработка изображения
-            if (img) {
-                let fileName = uuid.v4() + ".png";
-                filePath = path.resolve(__dirname, '..', 'static', fileName);
-                await img.mv(filePath); // Сохранение файла
-                // Создание записи в таблице ItemImage
-                await ItemImage.create({
-                    img: fileName,
-                    itemId: item.id
-                });
-            }
-            else{
-                return next(ApiError.badRequest("Укажите фото"));
+            let { name, price, typeId, info, colorIds } = req.body;
+            let img = req.files?.img;
+            if (!name) return next(ApiError.light("Введите название товара"));
+            if (!price) return next(ApiError.light("Введите цену товара"));
+            if (!img) return next(ApiError.light("Добавьте хотя бы одно изображение"));
+            if (!info) return next(ApiError.light("Добавьте описание товара"));
+            if (!colorIds) return next(ApiError.light("Укажите хотя бы один цвет"));
+            if (!typeId) return next(ApiError.light("Укажите тип товара"));
+            // Проверка типа
+            const type = await Type.findOne({ where: { id:typeId } });
+            if (!type) {
+                return next(ApiError.light("Нет такого типа"));
             }
     
-            // Обработка информации info, если она есть
+           
+            // Создание Item
+            item = await Item.create({ name, price, typeId:type.id });
+            // Обработка изображений
+            img = Array.isArray(img) ? img : [img];
+            if (img && Array.isArray(img)) {
+                for (let i = 0; i < img.length; i++) {
+                    let fileName = uuid.v4() + ".png";
+                    let filePath = path.resolve(__dirname, '..', 'static', fileName);
+    
+                    await img[i].mv(filePath); // Если упадёт — попадёт в catch
+    
+                    fileRecords.push({ filePath, fileName });
+    
+                    await ItemImage.create({
+                        img: fileName,
+                        itemId: item.id
+                    });
+                }
+            } else {
+                errorText="Укажите хотя бы одно фото";
+                throw new Error(errorText);  
+            }
+    
+            // Обработка info
             if (info) {
-                info = JSON.parse(info);
-                await Promise.all(info.map(i =>
-                    ItemInfo.create({
+                const parsed = JSON.parse(info);
+                await Promise.all(parsed.map(i =>{
+                    if(i.title!=='' && i.discription!==''){
+                        return ItemInfo.create({
                         title: i.title,
                         discription: i.discription,
                         itemId: item.id
                     })
+                }else{
+                    errorText="Укажите Заголовок и Содержание";
+                    throw new Error(errorText);  
+
+                }
+            }
                 ));
+            }else{
+                errorText="Укажите хотя бы одно поле описания";
+                throw new Error(errorText);  
+
             }
-            else{
-                await ItemInfo.create({
-                        title:"",
-                        discription: "",
-                        itemId: item.id
-                    })
+            
+            // Обработка цветов (если переданы colorIds как JSON-массив)
+            if (colorIds) {
+                const colors = JSON.parse(colorIds);
+                await Promise.all(colors.map(colorId =>
+                    ColorItemConnector.create({ itemId: item.id, colorId })
+                ));
+            }else{
+                await Item.destroy({ where: { id: item.id } });
+                return next(ApiError.light("Укажите хотя бы один цвет"));
             }
-    
-            // Запрос для возврата item с info и ItemImage
+            
+            // Возврат полного объекта
             const fullItem = await Item.findOne({
                 where: { id: item.id },
                 include: [
-                    { model: ItemInfo, as: 'info' }, // Включаем связанные данные info
-                    { model: ItemImage, as:"imgs" }, // Включаем связанные данные ItemImage
+                    { model: ItemInfo, as: 'info' },
+                    { model: ItemImage, as: 'imgs' },
                     { model: Color, as: 'colors' }
                 ]
             });
     
             return res.json(fullItem);
+    
         } catch (e) {
-            // Удаляем загруженное изображение, если оно уже было сохранено
-            if (filePath && fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
+            console.error(errorText? errorText: ("Ошибка при создании товара:", e.message));
+    
+            // Удаляем загруженные файлы
+            fileRecords.forEach(({ filePath }) => {
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            });
+    
+            // Удаляем всё связанное с item
+            if (item && item.id) {
+                try {
+                    await ItemImage.destroy({ where: { itemId: item.id } });
+                    await ItemInfo.destroy({ where: { itemId: item.id } });
+                    await ColorItemConnector.destroy({ where: { itemId: item.id } });
+                    await Item.destroy({ where: { id: item.id } });
+                } catch (cleanupError) {
+                    console.error("Ошибка при очистке базы:", cleanupError.message);
+                }
             }
     
-            next(ApiError.badRequest(e.message));
+            return next(ApiError.light(e.message));
         }
     }
+    
+    
     
     async addImg(req, res, next) {
         let filePath; // Объявляем заранее
@@ -228,56 +278,58 @@ class ItemController {
     async deleteOne(req, res, next) {
         try {
             const { itemId } = req.body;
+            if (!itemId) return next(ApiError.light("ID товара не передан"));
     
-            // Находим объект по id, включая связанные данные
+            // Находим товар и связанные заказы
             const item = await Item.findOne({
                 where: { id: itemId },
                 include: [
-                    { model: ItemInfo, as: 'info' }, // Ассоциация с ItemInfo
-                    { model: ItemImage, as: 'imgs' }, // Ассоциация с ItemImage
-                    { model: Color, as: 'colors' }    // Ассоциация с Color
+                    { model: Order },
+                    { model: ItemInfo, as: 'info' },
+                    { model: ItemImage, as: 'imgs' },
+                    { model: Color, as: 'colors' },
+                    { model: BasketItem }
                 ]
             });
     
-            if (!item) {
-                next(ApiError.badRequest("Товар не найден" ));
+            if (!item) return next(ApiError.light("Товар не найден"));
+    
+            // Проверка: если есть связанные заказы, запрещаем удаление
+            if (item.Orders && item.Orders.length > 0) {
+                return next(ApiError.light(`Невозможно удалить товар: найдено ${item.Orders.length} заказ(ов), связанных с этим товаром`));
             }
     
-            // Удаляем файлы всех связанных изображений
-            if (item.imgs && item.imgs.length > 0) {
+            // Удаление изображений с диска
+            if (item.imgs?.length > 0) {
                 for (const img of item.imgs) {
                     const filePath = path.resolve(__dirname, '..', 'static', img.img);
                     if (fs.existsSync(filePath)) {
-                        fs.unlinkSync(filePath); // Удаляем файл изображения
+                        fs.unlinkSync(filePath);
                     }
                 }
             }
     
-            // Удаляем связи с цветами из таблицы color_item
-            if (item.colors && item.colors.length > 0) {
-                await item.removeColors(item.colors); // Удаляет связи с цветами
+            // Удаление связей с цветами через таблицу-связку
+            if (item.colors?.length > 0) {
+                await item.removeColors(item.colors);
             }
     
-            // Удаляем связанные записи из ItemImage
+            // Удаление зависимых данных
             await ItemImage.destroy({ where: { itemId } });
-    
-            // Удаляем связанные записи из ItemInfo
             await ItemInfo.destroy({ where: { itemId } });
-    
-            // Удаляем связанные записи из BasketItem
             await BasketItem.destroy({ where: { itemId } });
     
-            // Удаляем связанные записи из Order
-            await Order.destroy({ where: { itemId } });
-    
-            // Удаляем сам Item
+            // Удаление самого Item
             await Item.destroy({ where: { id: itemId } });
     
             return res.json({ message: "Товар и все связанные данные успешно удалены" });
         } catch (e) {
-            next(ApiError.badRequest(e.message));
+            next(ApiError.internal("Ошибка при удалении товара: " + e.message));
         }
     }
+    
+
+
     
 
     async updateItem(req, res, next) {

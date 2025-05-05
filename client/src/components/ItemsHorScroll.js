@@ -17,7 +17,7 @@ const ItemsHorScroll = observer(({ type }) => {
     useEffect(() => {
         if (type.id !== -1) {  // Загружаем только если это не "Все товары"
             setLoading(true);
-            fetchItems(type.typeId, 1, item.onMain + 1).then(data => {
+            fetchItems(type.id, 1, item.onMain + 1).then(data => {
                 setLocalItems(data.rows);
             }).finally(() => setLoading(false));
         } else {

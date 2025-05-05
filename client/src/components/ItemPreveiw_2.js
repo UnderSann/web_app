@@ -57,7 +57,7 @@ const ItemPreview_2 = observer(({ Item, isBasket = 0, quantity=0}) => {
         <div className="d-flex flex-column flex-grow-1 ms-3 justify-content-between">
           <div className="text-start ">{Item.name}</div>
           <div className="text-muted">
-            {item.types.find(t => t.typeId === Item.typeId)?.name || 'Тип не найден'}
+            {item.types.find(t => t.id === Item.typeId)?.name || 'Тип не найден'}
           </div>
         </div>
 
@@ -71,14 +71,14 @@ const ItemPreview_2 = observer(({ Item, isBasket = 0, quantity=0}) => {
           <div className="d-flex flex-column align-items-center me-2">
             <Button variant="light" size="sm" 
             className="p-0 border-0"
-            onClick={() => (addToCart(user,item,basket))}>
+            onClick={() => (addToCart(user,Item,basket))}>
               <TriangleFill size={16} />
             </Button>
 
             <span className="fw-bold">{quantity}</span>
             <Button variant="light" size="sm" 
             className="p-0 border-0"
-            onClick={() => (deleteFromCart(user,item,basket))}>
+            onClick={() => (deleteFromCart(user,Item,basket))}>
               <TriangleFill size={16} style={{ transform: 'rotate(180deg)' }} />
             </Button>       
             </div>

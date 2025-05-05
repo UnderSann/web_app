@@ -45,13 +45,12 @@ const Rating = sequelize.define('rating', {
 const Type = sequelize.define('type', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     name: { type: DataTypes.STRING, unique: true, allowNull: false },
-    typeId: { type: DataTypes.INTEGER, unique: true, allowNull: false },
 });
 
 const ItemInfo = sequelize.define('item_info', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     title: { type: DataTypes.STRING, allowNull: false },
-    discription: { type: DataTypes.STRING, allowNull: false },
+    discription: { type: DataTypes.TEXT, allowNull: false },
 });
 
 const Order = sequelize.define('order', {
@@ -112,5 +111,6 @@ module.exports = {
     ItemInfo,
     ItemImage,
     Order,
-    Color
+    Color,
+    ColorItemConnector
 };

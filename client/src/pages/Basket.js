@@ -45,14 +45,14 @@ const Basket =  observer(() =>{
     return (
         <Container style={{ paddingTop: '80px' }}>
             <ArrowLeft 
-                        className="position-fixed start-0 top-30 translate-middle-y z-3"
-                        style={{ marginLeft:10, 
-                            marginTop:20, 
-                            width:30,
-                            height:30,
-                           // background:'white'
-                        }} 
-                        onClick={() => toMain()}
+                className="position-fixed start-0 top-30 translate-middle-y z-3"
+                style={{ marginLeft:10, 
+                    marginTop:20, 
+                        width:30,
+                    height:30,
+                    // background:'white'
+                }} 
+                onClick={() => toMain()}
             />
              <Button
                 variant="outline-dark"

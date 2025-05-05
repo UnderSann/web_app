@@ -13,20 +13,23 @@ export const useCartActions = (showToast) => {
                 showToast(`Добавлено в корзину: ${item.name}`, 'success');
             }
         } catch (e) {
-            showToast(error.errorLight, 'danger');
+            console.log("Ошибка добавления в карзину:"+e.message)
+
         }
     };
 
     const deleteFromCart = async (user, item, basket, toClear = 0) => { 
         try {
             const data = await deleteFromBasket(user.user.id, item.id, basket.page, basket.limit, toClear);
-            if (data) {
+            if (data?.rows) {
                 basket.setBasketItems(data.rows);
-                showToast(`Удалено из корзины: ${item.name}`, 'warning');    
+                showToast(`Удалено из корзины: ${item.name}`, 'warning');
+            } else {
+                showToast(`Товар удалён, но корзина пуста`, 'info');
             }
      
         } catch (e) {
-           showToast(error.errorLight, 'danger');
+            console.log("Ошибка удаления из карзины:"+e.message)
         }
     }
      const clearCart = async (user,basket) => {
@@ -34,11 +37,12 @@ export const useCartActions = (showToast) => {
                 await clearBasket(user.user.id).then(() => {
                     basket.setBasketItems([]); // Очистка элементов корзины
                     basket.setTotalCount(0); // Сбрасываем счётчик
-                    basket.setPage(1)
+                    basket.setPage(1);
                     showToast(`Карзина очищена`, 'warning');
                 });
         }catch (e) {
-            showToast(error.errorLight, 'danger');
+            console.log("Ошибка при очистке карзины:"+e.message)
+
         }
     };
 

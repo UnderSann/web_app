@@ -8,6 +8,8 @@ import { ArrowLeft } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import OrdersPreveiw from '../components/OrdersPreveiw';
 import { Cart } from 'react-bootstrap-icons';
+/*import { webSocketAPI } from '../https/webSocketAPI';*/
+
 const Orders = observer(() => {
     const { order, paths, user } = useContext(Context);
     const navigate = useNavigate();
@@ -28,21 +30,38 @@ const Orders = observer(() => {
         };
     
         loadOrders();
+    /*
+        // === Используем webSocketAPI ===
+        webSocketAPI.connect();
+    
+        webSocketAPI.onMessage(async (msg) => {
+            if (['created', 'updated', 'deleted', 'status_changed'].includes(msg.type)) {
+                if (user?.user?.id) {
+                    const updated = await fetchUserOrders(user.user.id);
+                    order.setOrder(updated);
+                }
+            }
+        });
+    
+        return () => {
+            webSocketAPI.close();
+        };*/
     }, [user?.user?.id]);
     
+    
+ 
     if (loadingItems) return <Loading />;
 
     return (
         <Container style={{ paddingTop: '80px' }}>
-            <ArrowLeft 
-                className="position-fixed m-1 start-0 top-30 translate-middle-y z-3"
-                style={{
-                    marginLeft: 10, 
-                    marginTop: 20, 
-                    width: 30,
-                    height: 30,
-                 //   background: 'white'
-                }} 
+           <ArrowLeft 
+                className="position-fixed start-0 top-30 translate-middle-y z-3"
+                style={{ marginLeft:10, 
+                marginTop:20, 
+                width:30,
+                height:30,
+                // background:'white'
+            }} 
                 onClick={() => navigate(paths.pop())}
             />
 

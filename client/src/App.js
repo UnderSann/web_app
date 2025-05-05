@@ -9,18 +9,27 @@ import { Context } from './index.js';
 import { check } from './https/userAPI';
 import Loading from './components/Loading.js'
 import { useNavigate } from 'react-router-dom';
+import { useToast, UpWindowMessage } from './components/UpWindowMessage';
+
 import ErrorPage from './ErrorHandlers/ErrorPage'; // Импорт страницы ошибки
 
 const App = observer(() => {
   const { user, error } = useContext(Context);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast, showToast } = useToast();
 
-
+useEffect(() => {
+        if (error.errorLight) {
+          showToast(error.errorLight, 'danger');
+          error.clearErrorLight(); 
+        }
+    }, [error.errorLight]);
   useEffect(() => {
     check().then(data => {
       if (data) {
         user.setUser(data);
+        console.log(data)
         user.setIsAuth(true);
       }
     }).finally(() => setLoading(false));
@@ -42,7 +51,9 @@ const App = observer(() => {
   return (
     <>
       <NavBar />
-      <AppRouter />
+     
+      
+      <AppRouter /> <UpWindowMessage toast={toast} />
     </>
   );
 });

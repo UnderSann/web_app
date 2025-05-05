@@ -23,7 +23,7 @@ const ItemsList = observer(({ type }) => {
     if (type.id === -1) { 
         paramType=undefined
     } else {
-        paramType=type.typeId
+        paramType=type.id
     }
     useEffect(() => {
         setLoadingItems(true);

@@ -31,33 +31,26 @@ app.get('/',(req,res) => {
 //=====================================================================================
 // Создаём HTTP-сервер для объединения с WebSocket
 const server = http.createServer(app);
-
+/*
 // Настраиваем WebSocket-сервер
 const wss = new WebSocket.Server({ server });
 
-wss.on('connection', (ws) => {
-    console.log('Новое WebSocket-соединение');
+// Рассылка обновлений клиентам
+const broadcastOrderUpdate = (data) => {
+    const message = JSON.stringify({ type: 'order_updated', payload: data });
 
-    // Отправляем сообщение при подключении
-    ws.send(JSON.stringify({ message: 'Добро пожаловать в систему!' }));
-
-    // Обработка сообщений от клиента
-    ws.on('message', (message) => {
-        console.log(`Сообщение от клиента: ${message}`);
-        // Рассылаем всем клиентам уведомление
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ newOrder: message }));
-            }
-        });
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(message);
+        }
     });
+};
 
-    ws.on('close', () => {
-        console.log('Соединение закрыто');
-    });
-});
+// Экспортируем для использования в контроллерах
+module.exports.wss = wss;
+module.exports.broadcastOrderUpdate = broadcastOrderUpdate;
 //=====================================================================================
-
+*/
 // Запуск сервера
 const start = async () => {
     try {

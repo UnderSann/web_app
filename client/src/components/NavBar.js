@@ -53,7 +53,8 @@ const NavBar = observer(() => {
                                 <Button className="m-1" variant="outline-dark" as={NavLink} to={BASKET_ROUTE} onClick={() => handleNavClick(BASKET_ROUTE)}>
                                     <Cart />
                                 </Button>
-                                <Button className="m-1" variant="outline-dark" onClick={() => handleNavClick(ADMIN_ROUTE)}>Панель администратора</Button>
+                                {user.user.role==='ADMIN'&&
+                                <Button className="m-1" variant="outline-dark" onClick={() => handleNavClick(ADMIN_ROUTE)}>Панель администратора</Button>}
                                 <Button className="m-1" variant="outline-dark" onClick={() => logOut()}>
                                     Выйти
                                 </Button>

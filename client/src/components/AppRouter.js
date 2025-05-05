@@ -8,7 +8,7 @@ import { ERROR_ROUTE } from '../utils/consts';
 
 const AppRouter = () => {
   const { user } = useContext(Context);
-  console.log("Current route:", window.location.pathname);
+ //console.log("Current route:", window.location.pathname);
 
   return (
     <Routes>

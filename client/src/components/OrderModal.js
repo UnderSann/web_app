@@ -68,7 +68,7 @@ const OrderModal = ({ show, onHide,editOrder = null  }) => {
     useEffect(() => {
         const loadOrders = async () => {
             if (!user?.user?.id) return;
-            setLoadingItems(true);
+            //setLoadingItems(true);
     
             try {
                 if (!isEditing) {
@@ -92,7 +92,7 @@ const OrderModal = ({ show, onHide,editOrder = null  }) => {
             } catch (e) {
                 console.error("Ошибка загрузки заказов:", e);
             } finally {
-                setLoadingItems(false);
+                //setLoadingItems(false);
             }
         };
     
@@ -100,7 +100,7 @@ const OrderModal = ({ show, onHide,editOrder = null  }) => {
     }, [user?.user?.id, show, isEditing, editOrder]);  // Добавить зависимость от editOrder
     
 
-    if (loadingItems) return <Loading />;
+   // if (loadingItems) return <Loading />;
     
 // Функция для проверки данных заказа
 const validateOrderData = (orders, quantity, number) => {

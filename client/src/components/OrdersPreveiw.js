@@ -4,14 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { ITEM_ROUTE } from '../utils/consts';
 import { observer } from 'mobx-react-lite';
 import { Trash, Pen, Check2, Wrench } from 'react-bootstrap-icons';
-import { deleteOrder, fetchUserOrders, doComfirmed, doDone } from '../https/orderAPI';
+import { deleteOrder, fetchUserOrders, doComfirmed, doDone, fetchOrders } from '../https/orderAPI';
 import { fetchOneItem } from '../https/itemAPI';
 import { Context } from '..';
 import { useToast, UpWindowMessage } from '../components/UpWindowMessage';
 import OrderModal from './OrderModal';
 import Loading from './Loading';
 
-const OrdersPreview = observer(({ orderItem, admin = false }) => {
+const OrdersPreview = observer(({ orderItem, admin = false, all=false }) => {
     const { user, order, item } = useContext(Context);
     const navigate = useNavigate();
     const { toast, showToast } = useToast();
@@ -50,15 +50,17 @@ const OrdersPreview = observer(({ orderItem, admin = false }) => {
         try {
             const data = await deleteOrder(orderItem.id);
             if (data) {
-                const fetchData = await fetchUserOrders(user.user.id);
                 if (admin) {
-                    order.setOrder(data.rows);
-                    order.setTotalCount(data.count);
+                    const updatedOrders = await fetchOrders(order.page, order.limit,all);
+                    order.setOrder(updatedOrders.rows);
+                    order.setTotalCount(updatedOrders.count);
                 } else {
+                    const fetchData = await fetchUserOrders(user.user.id);
                     order.setOrder(fetchData);
                 }
                 showToast(data.message);
             }
+            
         } catch (e) {
             console.error("Ошибка удаления заказа:", e.response?.data?.message || e.message);
             showToast(e.response?.data?.message || e.message);
@@ -67,10 +69,17 @@ const OrdersPreview = observer(({ orderItem, admin = false }) => {
 
     const Comfirmed = async () => {
         try {
-            const data = await doComfirmed(orderItem.id, order.page, order.limit);
+            const data = await doComfirmed(orderItem.id, order.page, order.limit, all);
             if (data) {
-                order.setOrder(data.rows);
-                order.setTotalCount(data.count);
+                if (admin) {
+                    const updatedOrders = await fetchOrders(order.page, order.limit,all);
+                    order.setOrder(updatedOrders.rows);
+                    order.setTotalCount(updatedOrders.count);
+                } else {
+                    const fetchData = await fetchUserOrders(user.user.id);
+                    order.setOrder(fetchData);
+                }
+                showToast(data.message);
             }
         } catch (e) {
             console.error("Ошибка заказа в процессе:", e.response?.data?.message || e.message);
@@ -79,10 +88,18 @@ const OrdersPreview = observer(({ orderItem, admin = false }) => {
 
     const Done = async () => {
         try {
-            const data = await doDone(orderItem.id, order.page, order.limit);
+            const data = await doDone(orderItem.id, order.page, order.limit, all);
+            showToast(data.message);
             if (data) {
-                order.setOrder(data.rows);
-                order.setTotalCount(data.count);
+                if (admin) {
+                    const updatedOrders = await fetchOrders(order.page, order.limit,all);
+                    order.setOrder(updatedOrders.rows);
+                    order.setTotalCount(updatedOrders.count);
+                } else {
+                    const fetchData = await fetchUserOrders(user.user.id);
+                    order.setOrder(fetchData);
+                }
+                
             }
         } catch (e) {
             console.error("Ошибка подтверждения заказа:", e.response?.data?.message || e.message);

@@ -4,8 +4,8 @@ import { Context } from '..';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'react-bootstrap-icons';
-import OrdersAdministration from '../components/OrdersAdministration';
-
+import OrdersAdministrator from '../components/OrdersAdministrator';
+import AddItemAdministrator from '../components/AddItemAdministrator';
 const Admin = observer(() => {
     const { paths,order } = useContext(Context);
     const navigate = useNavigate();
@@ -13,7 +13,7 @@ const Admin = observer(() => {
     const [view, setView] = useState('admin');
 
     const handleAddItem = () => {
-        console.log("Добавление товара");
+       setView('addItem');
     };
 
     const handleViewOrders = () => {
@@ -44,9 +44,10 @@ const Admin = observer(() => {
 
             {/* Контент строго по центру */}
             <Container
-                className="d-flex flex-column justify-content-center align-items-center"
+                className="d-flex flex-column align-items-center"
                 style={{ minHeight: 'calc(100vh - 80px)', paddingTop: '140px' }} // 80px (navbar) + 60px (панель)
             >
+                <div style={{paddingTop:'20px'}}>
                 {view === 'admin' && (
                     <div className="d-flex flex-column align-items-center gap-3">
                         <Button variant="primary" size="lg" onClick={handleAddItem}>
@@ -59,10 +60,16 @@ const Admin = observer(() => {
                 )}
 
                 {view === 'orders' && (
-                    <div className="w-100 mt-4">
-                        <OrdersAdministration />
+                    <div className="">
+                        <OrdersAdministrator />
+                    </div>
+                )}   
+                {view === 'addItem' && (
+                    <div className="">
+                        <AddItemAdministrator />
                     </div>
                 )}
+                </div>
             </Container>
         </div>
     );

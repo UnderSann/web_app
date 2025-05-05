@@ -111,8 +111,8 @@ const AddItemAdministrator = observer(() => {
     };
     const handleAddType = () => {
         
-        if (newTypeName.trim() && newTypeId) {
-            createType(newTypeName ,newTypeId)
+        if (newTypeName.trim()) {
+            createType(newTypeName)
                 .then(newType => {
                     setAvailableTypes([...availableTypes, newType]);
                     setNewTypeName('');
@@ -281,13 +281,7 @@ const AddItemAdministrator = observer(() => {
                     onChange={e => setNewTypeName(e.target.value)}
                 />
             </Col>
-            <Col md={4}>
-                <Form.Control 
-                    placeholder="Номер типа" 
-                    value={newTypeId}
-                    onChange={e => setNewTypeId(e.target.value)}
-                />
-            </Col>
+
             <Col xs="auto">
                 <Button variant="outline-success" onClick={handleAddType}>
                     <Plus /> Добавить

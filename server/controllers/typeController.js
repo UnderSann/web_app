@@ -30,7 +30,7 @@ class TypeController{
     
             // Проверяем наличие связанных товаров
             const itemsWithType = await Item.findAndCountAll({ where: { typeId: type.id } });
-            if (itemsWithType) {
+            if (itemsWithType.count) {
                 return next(ApiError.light(`Невозможно удалить тип: найдено ${itemsWithType.count} товар(ов), связанных с этим типом`));
             }
     

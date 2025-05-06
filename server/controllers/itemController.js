@@ -1,5 +1,7 @@
 const uuid = require('uuid');
 const path = require('path');
+const sequelize = require('../db');
+
 const fs = require('fs');
 const { Item,ItemInfo, BasketItem,ItemImage,Type,Color,Order,ColorItemConnector  } = require('../models/models');
 const ApiError = require('../error/ApiError');
@@ -327,85 +329,135 @@ class ItemController {
             next(ApiError.internal("Ошибка при удалении товара: " + e.message));
         }
     }
-    
-
-
-    
 
     async updateItem(req, res, next) {
+        const t = await sequelize.transaction();
+        let fileRecords = []; // Новые файлы
+        let filesToDelete = []; // Старые файлы (удалим только после успеха)
+       
         try {
-            const { itemId, name, price, rating, typeId, info } = req.body; // Получаем параметры из тела запроса
+            const itemId = req.params.id;
+            if (!itemId) throw new Error("Не указан ID товара");
     
-            // Проверяем наличие itemId
-            if (!itemId) {
-                return next(ApiError.badRequest("Предмет не передан"));
+            const existingItem = await Item.findByPk(itemId, { transaction: t });
+            if (!existingItem) throw new Error("Товар не найден");
+    
+            let { name, price, typeId, info, colorIds, oldImg } = req.body;
+            let img = req.files?.img;
+            if (!name) return next(ApiError.light("Введите название товара"));
+            if (!price) return next(ApiError.light("Введите цену товара"));
+            // Обработка изображений
+            oldImg = oldImg ? JSON.parse(oldImg) : [];
+            const oldImages = await ItemImage.findAll({ where: { itemId }, transaction: t });
+    
+            // Считаем количество изображений для сохранения
+            const newImgCount = img ? (Array.isArray(img) ? img.length : 1) : 0;
+            const oldImgCount = oldImg.length;
+    
+            // Если нет ни одного изображения, выбрасываем ошибку
+            if (oldImgCount + newImgCount === 0) {
+                throw new Error("Хотя бы одно изображение должно быть прикреплено");
             }
-            const type= await Type.findOne({where:{typeId}})
-            if(!type){
-                return next(ApiError.badRequest("Нет такого типа"));
-            }
-            // Находим Item в базе данных
-            const item = await Item.findOne({
-                where: { id: itemId },
-                include: [
-                    { model: ItemInfo, as: 'info' }, // Включаем ItemInfo
-                    { model: ItemImage, as: 'img' },
-                    { model: Color, as: 'colors' }
-                    
-                ]
-                
+    
+            // Делаем Set для старых изображений, которые нужно оставить
+            const imagesToKeep = new Set(oldImg); // храним только имена файлов
+            const imagesToDelete = oldImages.filter(({ img }) => !imagesToKeep.has(img));
+            filesToDelete = imagesToDelete.map(({ img }) => path.resolve(__dirname, '..', 'static', img));
+    
+            // Удалим из БД только те изображения, которых нет в сохранённых
+            await ItemImage.destroy({
+                where: {
+                    itemId,
+                    img: imagesToDelete.map(i => i.img)
+                },
+                transaction: t
             });
     
-            if (!item) {
-                return next(ApiError.badRequest("Предмет не найден не найден"));
-            }
+            // Добавим новые изображения
+            if (img) {
+                if (!Array.isArray(img)) img = [img];
+                for (const image of img) {
+                    const fileName = uuid.v4() + ".png";
+                    const filePath = path.resolve(__dirname, '..', 'static', fileName);
+                    await image.mv(filePath);
+                    fileRecords.push(filePath);
     
-            // Обновляем данные Item, если указаны параметры
-            const updatedFields = {};
-            if (name) updatedFields.name = name;
-            if (price) updatedFields.price = price;
-            if (rating) updatedFields.rating = rating;
-            if (typeId) updatedFields.typeId = typeId;
-    
-            await Item.update(updatedFields, { where: { id: itemId } });
-
-            if (info && Array.isArray(info)) {
-                for (const itemInfo of info) {
-                    const { id, title, discription } = itemInfo;
-    
-                    if (id) {
-                        // Обновляем существующую запись в ItemInfo
-                        await ItemInfo.update(
-                            { title, discription },
-                            { where: { id } }
-                        );
-                    } else {
-                        // Создаём новую запись в ItemInfo
-                        await ItemInfo.create({
-                            title,
-                            discription,
-                            itemId
-                        });
-                    }
+                    await ItemImage.create({ img: fileName, itemId }, { transaction: t });
                 }
             }
     
-            // Запрос для возврата item с info и ItemImage
+            // Обработка основных данных
+            if (name) existingItem.name = name;
+            if (price) existingItem.price = price;
+            if (typeId) {
+                const type = await Type.findOne({ where: { id: typeId }, transaction: t });
+                if (!type) throw new Error("Тип товара не найден");
+                existingItem.typeId = type.id;
+            }
+            await existingItem.save({ transaction: t });
+    
+            // Обработка описания
+            if (info) {
+                const parsed = JSON.parse(info);
+                await ItemInfo.destroy({ where: { itemId }, transaction: t });
+    
+                await Promise.all(parsed.map(i => {
+                    if (i.title && i.discription) {
+                        return ItemInfo.create({
+                            title: i.title,
+                            discription: i.discription,
+                            itemId
+                        }, { transaction: t });
+                    } else {
+                        throw new Error("Укажите Заголовок и Содержание");
+                    }
+                }));
+            }
+    
+            // Обновление цветов
+            if (colorIds) {
+                const parsed = JSON.parse(colorIds);
+                await ColorItemConnector.destroy({ where: { itemId }, transaction: t });
+    
+                await Promise.all(parsed.map(colorId =>
+                    ColorItemConnector.create({ itemId, colorId }, { transaction: t })
+                ));
+            }
+    
+            await t.commit();
+    
+            // Удаляем ненужные файлы
+            filesToDelete.forEach(fp => {
+                if (fs.existsSync(fp)) fs.unlinkSync(fp);
+            });
+    
             const fullItem = await Item.findOne({
                 where: { id: itemId },
                 include: [
-                    { model: ItemInfo, as: 'info' }, // Ассоциация с ItemInfo
-                    { model: ItemImage, as: 'imgs' }, // Ассоциация с ItemImage
+                    { model: ItemInfo, as: 'info' },
+                    { model: ItemImage, as: 'imgs' },
                     { model: Color, as: 'colors' }
                 ]
             });
     
-            // Возвращаем полный объект с изображениями и инфо
             return res.json(fullItem);
+    
         } catch (e) {
-            next(ApiError.badRequest(e.message));
+            if (t) await t.rollback();
+    
+            fileRecords.forEach(fp => {
+                if (fs.existsSync(fp)) fs.unlinkSync(fp);
+            });
+    
+            return next(ApiError.light("Ошибка: " + e.message));
+        } finally {
+            filesToDelete.forEach(fp => {
+                if (fs.existsSync(fp)) fs.unlinkSync(fp);
+            });
         }
     }
+    
+    
 
 //colors
 async addColor(req, res, next) {

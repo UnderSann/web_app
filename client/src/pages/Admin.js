@@ -66,7 +66,7 @@ const Admin = observer(() => {
                 )}   
                 {view === 'addItem' && (
                     <div className="">
-                        <AddItemAdministrator />
+                        <AddItemAdministrator isEdit={false}/>
                     </div>
                 )}
                 </div>

@@ -7,7 +7,7 @@ router.post('/',checkRoleMiddleware('ADMIN'),itemController.create)
 router.post('/addimg',checkRoleMiddleware('ADMIN'),itemController.addImg)
 router.post('/addcolor',checkRoleMiddleware('ADMIN'),itemController.addColor)
 
-router.post('/update',checkRoleMiddleware('ADMIN'),itemController.updateItem)
+router.post('/update/:id',checkRoleMiddleware('ADMIN'),itemController.updateItem)
 
 router.get('/',itemController.getAll)
 router.get('/:id',itemController.getOne)

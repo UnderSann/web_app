@@ -11,11 +11,15 @@ import { useCartActions } from '../scripts/basketScr';
 import { useToast, UpWindowMessage } from '../components/UpWindowMessage';
 import OrderModal from '../components/OrderModal';
 import { fetchOneBasket } from '../https/basketAPI';
+import AddItemAdministrator from '../components/AddItemAdministrator';
 
-import { Cart ,Trash} from 'react-bootstrap-icons';
+import { Cart ,Trash,Pencil } from 'react-bootstrap-icons';
 import { LOGIN_ROUTE, REGISTRATION_ROUTE } from '../utils/consts';
 
 const ItemPage = observer(() => {
+    const [editMode, setEditMode] = useState(false);
+
+
     const { toast, showToast } = useToast(); // Хук вызывается здесь
     const { addToCart } = useCartActions(showToast); // Передаем showToast
     const { item, basket, user, paths, order,error } = useContext(Context);
@@ -36,7 +40,7 @@ const ItemPage = observer(() => {
                 console.error("Ошибка загрузки товара:", err);
             })
             .finally(() => setLoadingItem(false)); // Убедитесь, что состояние обновляется корректно
-    }, [id]);
+    }, [id,editMode]);
     
     const [loadingBasket, setLoadingBasket] = useState(false);
 
@@ -68,11 +72,19 @@ const ItemPage = observer(() => {
             showToast("Ошибка при удалении товара", 'text-danger'); // Если ошибка
         }
     };
-   if (loadingItem||loadingBasket ) {
-        return (
-            <Loading/>
-        );
+    if (loadingItem || loadingBasket) {
+        return <Loading />;
     }
+    
+    if (editMode) {
+        return (
+            <Container style={{ paddingTop: '70px'}}>
+                <AddItemAdministrator isEdit={true} onClose={() => setEditMode(false)} />        
+            </Container>
+        );
+
+    }
+    
     const showModalHandler =()=>{
         if(user.isAuth && Array.isArray(item.items?.colors) && item.items.colors.length > 0)
         {
@@ -125,15 +137,25 @@ const ItemPage = observer(() => {
                     >
                         <Cart />
                     </Button>
-                    {user.user.role==='ADMIN' &&
-                        <Button
-                            variant="outline-dark"
-                            className="w-100"
-                            onClick={handleDelete}
-                        >
-                            <Trash />
-                        </Button>
-                    }
+                    {user.user.role === 'ADMIN' && (
+                        <>
+                            <Button
+                                variant="outline-dark"
+                                className="w-100"
+                                onClick={() => setEditMode(true)}
+                            >
+                                <Pencil />
+                            </Button>
+                            <Button
+                                variant="outline-dark"
+                                className="w-100"
+                                onClick={handleDelete}
+                            >
+                                <Trash />
+                            </Button>
+                        </>
+                    )}
+
                 </div>
 
 
@@ -162,8 +184,7 @@ const ItemPage = observer(() => {
                                     {item.items.colors.map(color => (
                                         color && (
                                             <div key={color.id} style={{ display: 'flex', alignItems: 'center' }}>
-                                                <span>{color.name}:</span>
-                                                <span
+                                                 <span
                                                     style={{
                                                         width: '20px',
                                                         height: '20px',
@@ -172,6 +193,8 @@ const ItemPage = observer(() => {
                                                         border: '1px solid #000',
                                                     }}
                                                 ></span>
+                                                <span> - {color.name}<strong>;</strong></span>
+                                               
                                             </div>
                                         )
                                     ))}

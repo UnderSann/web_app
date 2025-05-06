@@ -12,7 +12,7 @@ const ConfirmModal = ({ show, title, message, onConfirm, onCancel }) => {
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onCancel}>Отмена</Button>
-        <Button variant="danger" onClick={onConfirm}>Удалить</Button>
+        <Button variant="danger" onClick={onConfirm}>Подтверждаю</Button>
       </Modal.Footer>
     </Modal>
   );

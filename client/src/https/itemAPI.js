@@ -46,6 +46,14 @@ export const fetchItems = async (typeId,page,limit) =>{
     }})
     return data
 }
+export const updateItem = async (itemId,formData) =>{
+    const { data } = await $authHost.post(`api/item/update/${itemId}`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return data
+}
 export const deleteItem = async (itemId) =>{
     const {data} = await $authHost.delete('api/item/remove',{data:{
         itemId

@@ -85,14 +85,19 @@ class ItemController {
             }
             
             // Возврат полного объекта
-            const fullItem = await Item.findOne({
-                where: { id: item.id },
-                include: [
-                    { model: ItemInfo, as: 'info' },
-                    { model: ItemImage, as: 'imgs' },
-                    { model: Color, as: 'colors' }
-                ]
-            });
+        const fullItem = await Item.findOne({
+            where: { id: item.id },
+            include: [
+                { model: ItemInfo, as: 'info' },
+                { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+                { model: Color, as: 'colors' }
+            ]
+        });
     
             return res.json(fullItem);
     
@@ -150,13 +155,18 @@ class ItemController {
     
             // Запрос для возврата item с info и ItemImage
             const fullItem = await Item.findOne({
-                where: { id: itemId },
-                include: [
-                    { model: ItemInfo, as: 'info' }, // Ассоциация info
-                    { model: ItemImage, as: 'imgs' }, // Ассоциация imgs
-                    { model: Color, as: 'colors' }
-                ]
-            });
+            where: { id: item.id },
+            include: [
+                { model: ItemInfo, as: 'info' },
+                { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+                { model: Color, as: 'colors' }
+            ]
+        });
     
             // Возвращаем полный объект с изображениями и инфо
             return res.json(fullItem);
@@ -432,13 +442,18 @@ class ItemController {
             });
     
             const fullItem = await Item.findOne({
-                where: { id: itemId },
-                include: [
-                    { model: ItemInfo, as: 'info' },
-                    { model: ItemImage, as: 'imgs' },
-                    { model: Color, as: 'colors' }
-                ]
-            });
+            where: { id: itemId },
+            include: [
+                { model: ItemInfo, as: 'info' },
+                { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+                { model: Color, as: 'colors' }
+            ]
+        });
     
             return res.json(fullItem);
     
@@ -487,11 +502,14 @@ async addColor(req, res, next) {
            
 
             include: [
-                { model: ItemInfo, as: 'info' }, // Ассоциация info
-                { model: ItemImage, as: 'imgs' }, // Ассоциация imgs
-                { model: Color, as: 'colors', 
-                    //through: { attributes: [] } 
-                }    // Ассоциация colors
+                { model: ItemInfo, as: 'info' },
+                { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+                { model: Color, as: 'colors' }
             ]
             
         });
@@ -527,13 +545,14 @@ async removeColor(req, res, next) {
         const fullItem = await Item.findOne({
             where: { id: itemId },
             include: [
-                { model: ItemInfo, as: 'info' }, // Ассоциация info
-                { model: ItemImage, as: 'imgs' }, // Ассоциация imgs
+                { model: ItemInfo, as: 'info' },
                 { 
-                    model: Color, 
-                    as: 'colors',
-                    //through: { attributes: [] } // Исключаем промежуточную таблицу
-                }
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+                { model: Color, as: 'colors' }
             ]
         });
 

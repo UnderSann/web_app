@@ -49,18 +49,37 @@ const ItemsList = observer(({ type }) => {
     return (
         <>
         <ArrowLeft 
-            className="position-fixed start-0 top-30 m-2 translate-middle-y z-3"
-            style={{ marginLeft:10, 
-                marginTop:20, 
-                width:30,
-                height:30,
+            className="position-fixed start-0 translate-middle-y z-3"
+            style={{ 
+                marginLeft: 0, // прижимаем к левому краю
+                top: 95, // абсолютный отступ от верха
+                width: 50, 
+                height: 30, 
+                backgroundColor: "white", // белая кнопка
+                border: "2px solid black", // черная обводка
+                borderBottomRightRadius: 10, // закругленный угол снизу справа
+                borderBottomLeftRadius: 0,
+                borderTopRightRadius: 10,
+                borderTopLeftRadius: 0
             }} 
             onClick={() => toMain()}
         />
-        <Row className="d-flex justify-content-center"
-            style={{ marginTop: isMobile ? '20px' : '5px' ,
-                padding: '0 5px' }}
+        <div className="center d-flex flex-column w-100"
+            style={{ alignItems:  'center',paddingLeft: isMobile ? '40px' : '0px' }}
         >
+            <h1
+                className="text-start"
+                style={{
+                    maxWidth: '800px',
+                    width: '100%',
+                }}
+            >
+                {type.name}
+            </h1>
+        </div>
+        <Row className="d-flex justify-content-center p-1"
+        >
+            
             {allItems.length > 0 ?
                 allItems.map(item => (
                     

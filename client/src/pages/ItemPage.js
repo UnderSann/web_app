@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate,useLocation } from 'react-router-dom';
 import { Container, Row, Button, Modal, Form, Image, ListGroup } from "react-bootstrap";
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
@@ -19,7 +19,7 @@ import { LOGIN_ROUTE, REGISTRATION_ROUTE } from '../utils/consts';
 const ItemPage = observer(() => {
     const [editMode, setEditMode] = useState(false);
 
-
+    const location = useLocation();
     const { toast, showToast } = useToast(); // Хук вызывается здесь
     const { addToCart } = useCartActions(showToast); // Передаем showToast
     const { item, basket, user, paths, order,error } = useContext(Context);
@@ -96,18 +96,29 @@ const ItemPage = observer(() => {
     // Переход к рендерингу данных после их загрузки
     return (
         <Container style={{ paddingTop: '70px',paddingBottom: '30px' }}>
-            
             <ArrowLeft 
-                className="position-fixed start-0  translate-middle-y z-3"
-                style={{ marginLeft: 10, marginTop: 20, width: 30, height: 30}} 
+                className="position-fixed start-0 translate-middle-y z-3"
+                style={{ 
+                    marginLeft: 0, // прижимаем к левому краю
+                    top: 95, // абсолютный отступ от верха
+                    width: 50, 
+                    height: 30, 
+                    backgroundColor: "white", // белая кнопка
+                    border: "2px solid black", // черная обводка
+                    borderBottomRightRadius: 10, // закругленный угол снизу справа
+                    borderBottomLeftRadius: 0,
+                    borderTopRightRadius: 10,
+                    borderTopLeftRadius: 0
+                }} 
                 onClick={back}
             />
+
             {!error.errorCode && !error.errorMessage  &&
             <Row>
                 {/* Название товара и цена */}
                 <h1
                     className="mb-0 text-start"
-                    style={{ marginLeft: isMobile ? '30px' : '0px' }}
+                    style={{ marginLeft: isMobile ? '40px' : '0px',paddingTop:'7px' }}
                 >
                     {item.items?.name + " - " + item.items?.price} BYN
                 </h1>

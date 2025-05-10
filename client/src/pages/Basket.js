@@ -45,12 +45,18 @@ const Basket =  observer(() =>{
     return (
         <Container style={{ paddingTop: '80px' }}>
             <ArrowLeft 
-                className="position-fixed start-0 top-30 translate-middle-y z-3"
-                style={{ marginLeft:10, 
-                    marginTop:20, 
-                        width:30,
-                    height:30,
-                    // background:'white'
+                className="position-fixed start-0 translate-middle-y z-3"
+                style={{ 
+                    marginLeft: 0, // прижимаем к левому краю
+                    top: 95, // абсолютный отступ от верха
+                    width: 50, 
+                    height: 30, 
+                    backgroundColor: "white", // белая кнопка
+                    border: "2px solid black", // черная обводка
+                    borderBottomRightRadius: 10, // закругленный угол снизу справа
+                    borderBottomLeftRadius: 0,
+                    borderTopRightRadius: 10,
+                    borderTopLeftRadius: 0
                 }} 
                 onClick={() => toMain()}
             />
@@ -72,11 +78,22 @@ const Basket =  observer(() =>{
             Очистить
             </Button>
             <UpWindowMessage toast={toast} /> 
+            <div className="center d-flex flex-column w-100"
+            style={{ alignItems:  'center',paddingLeft: isMobile ? '40px' : '0px' }}
+            >
+            <h1
+                className="text-start"
+                style={{
+                    maxWidth: '800px',
+                    width: '100%',
+                }}
+            >
+                Корзина
+            </h1>
+            </div>
             <Row
                 className="d-flex justify-content-center align-items-center"
-                style={{ marginTop: isMobile ? '40px' : '20px' ,
-                padding: '0 5px' 
-                }}
+                
             >
 
             {basket.basketItems.length !== 0 ? (

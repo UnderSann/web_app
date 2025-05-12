@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { Button, Card, Spinner, NavLink } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { fetchItems } from '../https/itemAPI';
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
@@ -14,10 +15,12 @@ const ItemsHorScroll = observer(({ type }) => {
     const [loading, setLoading] = useState(true);
     const scrollRef = useRef(null);
     
+    const navigate = useNavigate()
     useEffect(() => {
-        if (type.id !== -1) {  // Загружаем только если это не "Все товары"
+        if (type.id !== null && type.id !== undefined) {  // Загружаем только если это не "Все товары"
             setLoading(true);
-            fetchItems(type.id, 1, item.onMain + 1).then(data => {
+            fetchItems({ typeId: type.id?[type.id] : [], page: 1, limit: item.onMain + 1 })
+            .then(data => {
                 setLocalItems(data.rows);
             }).finally(() => setLoading(false));
         } else {
@@ -50,8 +53,23 @@ const ItemsHorScroll = observer(({ type }) => {
     if (loading) return <Loading/>;
 
     return (
-        <div key={type.id} className='mb-3'>
-            <Card onClick={() => item.setSelectedType(type)} className="p-3 d-flex" >
+        <div key={type.id} className='mb-2'>
+        <Card
+            onClick={() => {
+                item.setSelectedType(type);
+                const params = new URLSearchParams(window.location.search);
+                if (type.id !== null && type.id !== undefined) {
+                params.set('typeId', type.id);
+                } else {
+                params.delete('typeId'); // Удалить если "все товары"
+                params.set('typeId', 0);
+
+                }
+                navigate(`?${params.toString()}`);
+            }}
+            className="p-3 d-flex"
+        >
+
                 <div className="d-flex align-items-center">
                     <List className="me-2" />
                     {type.name}

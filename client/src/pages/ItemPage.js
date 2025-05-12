@@ -61,7 +61,8 @@ const ItemPage = observer(() => {
     }, [user.isAuth, user.user?.id, item.items?.id]);
  
     const back = () => {
-        navigate(paths.pop());
+        
+        navigate(`${paths.pop()}${location.search}`);
     };
     const handleDelete = async () => {
         try {

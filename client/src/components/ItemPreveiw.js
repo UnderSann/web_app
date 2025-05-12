@@ -29,7 +29,7 @@ const ItemPreveiw = observer(({ item }) => {
         
         <Card 
             key={item.id} 
-            className="m-3" 
+            className="m-2" 
             style={{ 
                 minWidth: 250, 
                 minHeight: 350, 
@@ -47,7 +47,7 @@ const ItemPreveiw = observer(({ item }) => {
                 style={{ objectFit: 'cover',
                     borderRadius: '4px',
                     objectPosition: 'center center',}}
-                src={process.env.REACT_APP_API_URL + item.imgs[item.imgs.length-1].img} 
+                src={process.env.REACT_APP_API_URL + item.imgs[0].img} 
             />
 
             {/* Контейнер для name и price */}

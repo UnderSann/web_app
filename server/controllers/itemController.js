@@ -1,6 +1,7 @@
 const uuid = require('uuid');
 const path = require('path');
 const sequelize = require('../db');
+const { Op } = require('sequelize');
 
 const fs = require('fs');
 const { Item,ItemInfo, BasketItem,ItemImage,Type,Color,Order,ColorItemConnector  } = require('../models/models');
@@ -219,48 +220,103 @@ class ItemController {
         }
     }
     
-    
-    async getAll(req, res, next) {
-        try {
-            let { typeId, limit, page } = req.query;
-    
-            // Устанавливаем значения по умолчанию для пагинации
-            page = page || 1;
-            limit = limit || 10;
-            let offset = (page - 1) * limit;
-    
-            // Опции для получения данных с использованием ассоциаций
-            const options = {
-                limit, 
-                offset,
-                distinct: true, // Уникальный подсчёт записей
-                include: [
-                    { model: ItemInfo, as: 'info', required: false }, // Включаем данные info
-                    { model: ItemImage, as: 'imgs', required: false }, // Включаем данные imgs
-                    { model: Color, as: 'colors', required: false  }
-                ]
-            };
-    
-            if (typeId) {
-                // Добавляем условие фильтрации по typeId
-                options.where = { typeId };
-            }
-    
-            // Получаем предметы с подсчётом общего количества
-            const items = await Item.findAndCountAll(options);
-    
-            // Проверяем наличие данных
-            if (!items.rows.length) {
-                return res.json({ count: 0, rows: [] }); // Если данных нет
-            }
-    
-            return res.json(items);
-        } catch (e) {
-            // Ловим и возвращаем ошибки
-            next(ApiError.badRequest(e.message));
+
+async getAll(req, res, next) {
+    try {
+        let {
+            typeId,
+            colors,
+            minPrice,
+            maxPrice,
+            page = 1,
+            limit = 10,
+            query
+        } = req.query;
+            console.log("typeId[0]?.name\n\n\n"+colors+"\n\n\n")
+
+        // Преобразуем typeId и colors в массивы, если они пришли как строки с запятыми
+        if (typeId) {
+            typeId = Array.isArray(typeId) ? typeId : typeId.split(',').map(id => parseInt(id));
+        } else {
+            typeId = []; // Если нет typeId, делаем пустым массивом
         }
+
+        if (colors) {
+            console.log('Received colors:', colors);
+            colors = Array.isArray(colors) ? colors : colors.split(',').map(id => parseInt(id));
+        } else {
+            colors = []; // Если нет colors, делаем пустым массивом
+        }
+
+
+        // Преобразуем page и limit в числа
+        page = parseInt(page);
+        limit = parseInt(limit);
+        const offset = (page - 1) * limit;
+
+        const where = {}; // Создаём пустой объект для фильтрации
+
+        // Обрабатываем параметры фильтров
+        if (typeId.length > 0) {
+            where.typeId = { [Op.in]: typeId }; // Фильтрация по типам (массив)
+        }
+
+        if (minPrice) {
+            where.price = { ...where.price, [Op.gte]: parseFloat(minPrice) };
+        }
+
+        if (maxPrice) {
+            where.price = { ...where.price, [Op.lte]: parseFloat(maxPrice) };
+        }
+
+        if (query) {
+            where.name = { [Op.iLike]: `%${query}%` }; // Поиск по имени
+        }
+
+        // Опции для запроса в базу данных
+        const options = {
+            where,
+            limit,
+            offset,
+            distinct: true, // Для корректного подсчёта с include
+            include: [
+                { model: ItemInfo, as: 'info', required: false },
+               { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+            ]
+        };
+
+        // Добавляем фильтр по цвету, если он задан
+        if (colors.length > 0) {
+            options.include.push({
+                model: Color,
+                as: 'colors',
+                where: { id: { [Op.in]: colors } }, // Фильтрация по массиву цветовых ID
+                through: { attributes: [] }, // Убираем лишние поля из связующей таблицы
+                required: true
+            });
+        } else {
+            options.include.push({
+                model: Color,
+                as: 'colors',
+                required: false,
+                through: { attributes: [] }
+            });
+        }
+
+        // Получаем все товары по заданным фильтрам
+        const items = await Item.findAndCountAll(options);
+
+        return res.json(items); // Отправляем результаты
+    } catch (e) {
+        next(ApiError.badRequest(e.message)); // В случае ошибки, отправляем ошибку
     }
-    
+}
+
     async getOne(req, res, next) {
         try {
             const { id } = req.params;
@@ -272,7 +328,12 @@ class ItemController {
                 where: { id },
                 include: [
                     { model: ItemInfo, as: 'info' }, // Включаем связанные данные info
-                    { model: ItemImage, as: 'imgs' }, // Включаем связанные данные imgs
+                   { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                }, // Включаем связанные данные imgs
                     { model: Color, as: 'colors' }
                 ]
             });

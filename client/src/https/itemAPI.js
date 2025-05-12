@@ -39,13 +39,41 @@ export const createItem = async (formData) =>{
     });
     return data;
 }
+export const fetchItems = async (filters = {}) => {
+    const {
+        typeId = null,     // массив ID или null
+        colors = null,     // массив ID или null
+        minPrice = null,
+        maxPrice = null,
+        page = 1,
+        limit = 10,
+        query = ''
+    } = filters;
+    //console.log("typeId[0]?.name\n\n\n"+colors+"\n\n\n")
+    const params = {
+        page,
+        limit,
+    };
 
-export const fetchItems = async (typeId,page,limit) =>{
-    const {data} = await $host.get('api/item',{params:{
-        typeId, page, limit
-    }})
-    return data
-}
+    // Если typeId не null и является массивом, конвертируем его в строку с разделителем
+    if (typeId && Array.isArray(typeId) && typeId.length > 0) {
+        params.typeId = typeId.join(','); // => ?typeId=1,2,3
+    }
+
+    if (colors && Array.isArray(colors) && colors.length > 0) {
+        params.colors = colors.join(','); // => ?colors=4,5
+    }
+
+    if (minPrice !== null) params.minPrice = minPrice;
+    if (maxPrice !== null) params.maxPrice = maxPrice;
+    if (query) params.query = query;
+
+    const { data } = await $host.get('api/item', { params });
+    return data;
+};
+
+
+
 export const updateItem = async (itemId,formData) =>{
     const { data } = await $authHost.post(`api/item/update/${itemId}`, formData, {
         headers: {

@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable, action } from 'mobx';
 
 export default class ItemStore {
     constructor() {
@@ -6,6 +6,7 @@ export default class ItemStore {
         this._items = [];
         this._imgs = [];
         this._selectedType = {};
+        
         this._page = 1;
         this._totalCount = 0;
         this._limit = 5;
@@ -13,7 +14,23 @@ export default class ItemStore {
         this._selectedColor = null;
         this._priceRange = { min: 0, max: 10000 };
         this._searchQuery = '';  // Новый параметр для хранения поискового запроса
-        makeAutoObservable(this);
+        this._isSearchFilled = false;
+
+        makeAutoObservable(this, {
+            // Указываем, что эти методы — это действия (actions)
+            setSearchQuery: action,
+            setTypes: action,
+            setItems: action,
+            setImgs: action,
+            addItem: action,
+            setSelectedType: action,
+            setPage: action,
+            setTotalCount: action,
+            setLimit: action,
+            setSelectedColor: action,
+            setPriceRange: action,
+            setIsSearchFilled: action,
+        });
     }
 
     // Методы для изменения состояния
@@ -55,12 +72,22 @@ export default class ItemStore {
     setLimit(limit) {
         this._limit = limit;
     }
+
     setSelectedColor(color) {
         this._selectedColor = color;
     }
 
     setPriceRange(range) {
         this._priceRange = range;
+    }
+
+    setIsSearchFilled(bool) {
+        this._isSearchFilled = bool;
+    }
+
+    get isSearchFilled() {
+        this.setPage(1); // Обновляем страницу, если флаг поиска изменился
+        return this._isSearchFilled;
     }
 
     get selectedColor() {
@@ -77,7 +104,7 @@ export default class ItemStore {
     }
 
     get items() {
-            return this._items;
+        return this._items;
     }
 
     get imgs() {

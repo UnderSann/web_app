@@ -23,7 +23,8 @@ const ItemPreview_2 = observer(({ Item, isBasket = 0, quantity=0}) => {
         return;
         }
         paths.push(location.pathname);
-        navigate(ITEM_ROUTE + '/' + Item.id);
+        navigate(`${ITEM_ROUTE}/${Item.id}${location.search}`);
+
     };
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -54,7 +55,7 @@ useEffect(() => {
     <div className="d-flex flex-md-row align-items-start w-100 pt-1 pb-1 pl-1">
     {/* Картинка слева */}
        <Image
-        src={process.env.REACT_APP_API_URL + Item.imgs[Item.imgs.length-1].img}
+        src={process.env.REACT_APP_API_URL + Item.imgs[0].img}
         style={{
             width: '190px',
             height: '190px',

@@ -16,30 +16,42 @@ const NavBar = observer(() => {
     const [expanded, setExpanded] = useState(false); 
 
     const logOut = () => {
+
         user.setUser({});
         user.setIsAuth(false);
         localStorage.removeItem('token');
         setExpanded(false); 
         error.clearError();
         navigate(process.env.REACT_APP_MAIN_PAGE);
+                        item.setIsSearchFilled(false);  // Убираем флаг поиска
+
+        
     };
 
     const toMain = () => {
         item.setSelectedType({});
+        //        item.setIsSearchFilled(false);  // Убираем флаг поиска
+
         setExpanded(false);
         error.clearError();
         navigate(process.env.REACT_APP_MAIN_PAGE);
+                        item.setIsSearchFilled(false);  // Убираем флаг поиска
+
     };
 
     const handleNavClick = (path) => {
+     //   item.setIsSearchFilled(false);  // Убираем флаг поиска
+    item.setSelectedType({});      // Сбрасываем выбранный тип
         paths.push(location.pathname);
         setExpanded(false); 
         error.clearError();
-        navigate(path);
+        navigate(path)
+                        item.setIsSearchFilled(false);  // Убираем флаг поиска
+
     };
 
     return (
- <Navbar expand="xl" className="bg-body-tertiary"  style={{ flex: '1 1 0%', minWidth: 0 }}fixed="top" expanded={expanded}>
+ <Navbar expand="xxl" className="bg-body-tertiary"  style={{ flex: '1 1 0%', minWidth: 0 }}fixed="top" expanded={expanded}>
     <Container fluid className="m-1">
         {/* Левая часть: логотип + поиск */}
 <div
@@ -53,9 +65,8 @@ const NavBar = observer(() => {
     >
         Craftista
     </Navbar.Brand>
-    <Form className="d-flex flex-grow-1">
-        <SearchInput />
-    </Form>
+    <SearchInput />
+
 </div>
 
 

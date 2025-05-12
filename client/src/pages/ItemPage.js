@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate,useLocation } from 'react-router-dom';
 import { Container, Row, Button, Modal, Form, Image, ListGroup } from "react-bootstrap";
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
@@ -11,11 +11,15 @@ import { useCartActions } from '../scripts/basketScr';
 import { useToast, UpWindowMessage } from '../components/UpWindowMessage';
 import OrderModal from '../components/OrderModal';
 import { fetchOneBasket } from '../https/basketAPI';
+import AddItemAdministrator from '../components/AddItemAdministrator';
 
-import { Cart ,Trash} from 'react-bootstrap-icons';
+import { Cart ,Trash,Pencil } from 'react-bootstrap-icons';
 import { LOGIN_ROUTE, REGISTRATION_ROUTE } from '../utils/consts';
 
 const ItemPage = observer(() => {
+    const [editMode, setEditMode] = useState(false);
+
+    const location = useLocation();
     const { toast, showToast } = useToast(); // Хук вызывается здесь
     const { addToCart } = useCartActions(showToast); // Передаем showToast
     const { item, basket, user, paths, order,error } = useContext(Context);
@@ -36,7 +40,7 @@ const ItemPage = observer(() => {
                 console.error("Ошибка загрузки товара:", err);
             })
             .finally(() => setLoadingItem(false)); // Убедитесь, что состояние обновляется корректно
-    }, [id]);
+    }, [id,editMode]);
     
     const [loadingBasket, setLoadingBasket] = useState(false);
 
@@ -57,7 +61,8 @@ const ItemPage = observer(() => {
     }, [user.isAuth, user.user?.id, item.items?.id]);
  
     const back = () => {
-        navigate(paths.pop());
+        
+        navigate(`${paths.pop()}${location.search}`);
     };
     const handleDelete = async () => {
         try {
@@ -68,11 +73,19 @@ const ItemPage = observer(() => {
             showToast("Ошибка при удалении товара", 'text-danger'); // Если ошибка
         }
     };
-   if (loadingItem||loadingBasket ) {
-        return (
-            <Loading/>
-        );
+    if (loadingItem || loadingBasket) {
+        return <Loading />;
     }
+    
+    if (editMode) {
+        return (
+            <Container style={{ paddingTop: '70px'}}>
+                <AddItemAdministrator isEdit={true} onClose={() => setEditMode(false)} />        
+            </Container>
+        );
+
+    }
+    
     const showModalHandler =()=>{
         if(user.isAuth && Array.isArray(item.items?.colors) && item.items.colors.length > 0)
         {
@@ -84,18 +97,29 @@ const ItemPage = observer(() => {
     // Переход к рендерингу данных после их загрузки
     return (
         <Container style={{ paddingTop: '70px',paddingBottom: '30px' }}>
-            
             <ArrowLeft 
-                className="position-fixed start-0  translate-middle-y z-3"
-                style={{ marginLeft: 10, marginTop: 20, width: 30, height: 30}} 
+                className="position-fixed start-0 translate-middle-y z-3"
+                style={{ 
+                    marginLeft: 0, // прижимаем к левому краю
+                    top: 95, // абсолютный отступ от верха
+                    width: 50, 
+                    height: 30, 
+                    backgroundColor: "white", // белая кнопка
+                    border: "2px solid black", // черная обводка
+                    borderBottomRightRadius: 10, // закругленный угол снизу справа
+                    borderBottomLeftRadius: 0,
+                    borderTopRightRadius: 10,
+                    borderTopLeftRadius: 0
+                }} 
                 onClick={back}
             />
+
             {!error.errorCode && !error.errorMessage  &&
             <Row>
                 {/* Название товара и цена */}
                 <h1
                     className="mb-0 text-start"
-                    style={{ marginLeft: isMobile ? '30px' : '0px' }}
+                    style={{ marginLeft: isMobile ? '40px' : '0px',paddingTop:'7px' }}
                 >
                     {item.items?.name + " - " + item.items?.price} BYN
                 </h1>
@@ -125,15 +149,25 @@ const ItemPage = observer(() => {
                     >
                         <Cart />
                     </Button>
-                    {user.user.role==='ADMIN' &&
-                        <Button
-                            variant="outline-dark"
-                            className="w-100"
-                            onClick={handleDelete}
-                        >
-                            <Trash />
-                        </Button>
-                    }
+                    {user.user.role === 'ADMIN' && (
+                        <>
+                            <Button
+                                variant="outline-dark"
+                                className="w-100"
+                                onClick={() => setEditMode(true)}
+                            >
+                                <Pencil />
+                            </Button>
+                            <Button
+                                variant="outline-dark"
+                                className="w-100"
+                                onClick={handleDelete}
+                            >
+                                <Trash />
+                            </Button>
+                        </>
+                    )}
+
                 </div>
 
 
@@ -162,8 +196,7 @@ const ItemPage = observer(() => {
                                     {item.items.colors.map(color => (
                                         color && (
                                             <div key={color.id} style={{ display: 'flex', alignItems: 'center' }}>
-                                                <span>{color.name}:</span>
-                                                <span
+                                                 <span
                                                     style={{
                                                         width: '20px',
                                                         height: '20px',
@@ -172,6 +205,8 @@ const ItemPage = observer(() => {
                                                         border: '1px solid #000',
                                                     }}
                                                 ></span>
+                                                <span> - {color.name}<strong>;</strong></span>
+                                               
                                             </div>
                                         )
                                     ))}

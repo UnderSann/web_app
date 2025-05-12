@@ -70,7 +70,12 @@ class OrderController {
                     {
                         model: Item,
                         include: [
-                            { model: ItemImage, as: 'imgs' } // Вложенный include внутри Item
+                             { 
+                                model: ItemImage, 
+                                as: 'imgs',
+                                separate: true, // сортировка работает только при separate
+                                order: [['id', 'ASC']]
+                            }, // Вложенный include внутри Item
                         ]
                     },
                     {
@@ -93,23 +98,30 @@ class OrderController {
             limit = limit || 10;
             const offset = (page - 1) * limit;
             const orders = await Order.findAndCountAll({
-                where:{done:all},
-                limit,
-                offset,
-                distinct: true,
-                order: [['createdAt', 'ASC']],
-                include: [
-                    {
-                        model: Item,
-                        include: [
-                            { model: ItemImage, as: 'imgs' }
-                        ]
-                    },
-                    {
-                        model: Color
-                    }
-                ]
-            });
+            where: { done: all },
+            limit,
+            offset,
+            distinct: true,
+            order: [['createdAt', 'ASC']],
+            include: [
+                {
+                    model: Item,
+                    include: [
+                         { 
+                            model: ItemImage, 
+                            as: 'imgs',
+                            separate: true, // сортировка работает только при separate
+                            order: [['id', 'ASC']]
+                        },
+                        { model: Color, as: 'colors' }
+                    ]
+                },
+                {
+                    model: Color
+                }
+            ]
+        });
+
     
             return res.json(orders);
         } catch (e) {

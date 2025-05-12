@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useDebugValue } from 'react';
 import { Modal, Button, Form, Image, Alert } from "react-bootstrap";
 import { Context } from '..';
 import { createOrder, deleteOrder, fetchUserOrders,updateOrder } from '../https/orderAPI';
@@ -9,11 +9,13 @@ import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import  parsePhoneNumber  from 'libphonenumber-js';
 import { motion } from "framer-motion";
+import { fetchOneItem } from '../https/itemAPI';
 
 
 const OrderModal = ({ show, onHide,editOrder = null  }) => {
     const maxLength = process.env.REACT_APP_ORDER_TEXT_LIMIT;
-     
+    //console.log("ЗАКАЗ:"+editOrder?.item?.name)
+    
     const isEditing = !!editOrder;
     const { toast, showToast } = useToast();
     const { user, item, basket, order } = useContext(Context);
@@ -36,14 +38,28 @@ const OrderModal = ({ show, onHide,editOrder = null  }) => {
 
     const maxAvailable = process.env.REACT_APP_ORDER_LIMIT - order.orders.length;
     const availableToOrder = Math.max(0, maxAvailable);
-    
+       useEffect(() => {
+    if (isEditing) {
+        fetchOneItem(editOrder?.itemId)
+            .then(data => {
+                if (data) {
+                    item.setItems(data);
+                    //console.log("ЗАКАЗ:" + editOrder?.itemId + ' :: ' + data?.name);
+                }
+            })
+            .catch(err => console.error("Ошибка при получении item:", err))
+    }
+}, [show, isEditing, editOrder?.itemId]);
+
+
     useEffect(() => {
         if (basketItem) {
             setQuantity(Math.min(basketItem.quantity, availableToOrder));
         }
     }, [basketItem, show, availableToOrder]);
-
+    
     useEffect(() => {
+        if(!isEditing){
         setOrders(prevOrders => {
             const updated = [...prevOrders];
             const limitedQty = Math.min(quantity || 1, maxAvailable);
@@ -54,29 +70,30 @@ const OrderModal = ({ show, onHide,editOrder = null  }) => {
             }
             return updated;
         });
+    }
+        
     }, [quantity, maxAvailable]);
-    
+
+
     useEffect(() => {
-        if (show && textAreaRef.current) {
+        if (show && textAreaRef.current ) {
             const textarea = textAreaRef.current;
             textarea.style.height = 'auto';
             textarea.style.height = textarea.scrollHeight + 'px';
         }
+
     }, [show, orders, currentOrderIndex]);
     
     
     useEffect(() => {
         const loadOrders = async () => {
             if (!user?.user?.id) return;
-            //setLoadingItems(true);
     
             try {
                 if (!isEditing) {
                     const data = await fetchUserOrders(user.user.id);
                     order.setOrder(data);
-                }
-                // Обновление данных в случае редактирования заказа
-                else {
+                } else {
                     if (editOrder) {
                         setOrders([{
                             selectedColor: editOrder.colorId?.toString() || '',
@@ -91,13 +108,12 @@ const OrderModal = ({ show, onHide,editOrder = null  }) => {
                 }
             } catch (e) {
                 console.error("Ошибка загрузки заказов:", e);
-            } finally {
-                //setLoadingItems(false);
             }
         };
     
         loadOrders();
-    }, [user?.user?.id, show, isEditing, editOrder]);  // Добавить зависимость от editOrder
+    }, [user?.user?.id, show, isEditing, editOrder]);
+      // Добавить зависимость от editOrder
     
 
    // if (loadingItems) return <Loading />;
@@ -105,7 +121,7 @@ const OrderModal = ({ show, onHide,editOrder = null  }) => {
 // Функция для проверки данных заказа
 const validateOrderData = (orders, quantity, number) => {
     let errorMessage = "";
-
+    quantity=isEditing? 1: quantity;
     // Проверка на наличие выбранного цвета
     for (let i = 0; i < quantity; i++) {
         const currentOrder = orders[i];
@@ -411,7 +427,7 @@ const handleSubmit = async () => {
                                                             <option key={color.id} value={color.id}>{color.name}</option>
                                                         ))}
                                                     </Form.Select>
-                                                    {orders[currentOrderIndex]?.selectedColor && (
+                                                    {console.log("ITEM>ITEMS: \n"+item.items.name)&&orders[currentOrderIndex]?.selectedColor && (
                                                         <span 
                                                             style={{
                                                                 width: '20px',
@@ -536,7 +552,7 @@ const handleSubmit = async () => {
                             </Modal.Footer>
                         </Modal>       
             <UpWindowMessage toast={toast} />
-        </>
+            </>
     );
 };
 

@@ -44,7 +44,8 @@ const OrdersAdministration = observer(() => {
             </Button>
 
 
-            <Row className="d-flex justify-content-center">
+             <Row className="d-flex justify-content-center"
+                        >
                 {order.orders.length !== 0 ? (
                     order.orders.map((orderItem) => (
                         <OrdersPreveiw 

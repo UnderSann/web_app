@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast, UpWindowMessage } from './components/UpWindowMessage';
 
 import ErrorPage from './ErrorHandlers/ErrorPage'; // Импорт страницы ошибки
+import Footer from './components/Footer.js';
 
 const App = observer(() => {
   const { user, error } = useContext(Context);
@@ -50,10 +51,14 @@ useEffect(() => {
 
   return (
     <>
-      <NavBar />
-     
-      
-      <AppRouter /> <UpWindowMessage toast={toast} />
+    <div className="d-flex flex-column" style={{ minHeight: '100vh' }}>
+      <NavBar/>
+      <div className="flex-grow-1">
+        <AppRouter />
+      </div>
+      <UpWindowMessage toast={toast} />
+      <Footer />
+    </div>
     </>
   );
 });

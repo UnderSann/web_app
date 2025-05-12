@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { Card, Image, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useLocation } from 'react-router-dom';
 import { ITEM_ROUTE } from '../utils/consts';
 import { observer } from 'mobx-react-lite';
 import { Trash, Pen, Check2, Wrench } from 'react-bootstrap-icons';
@@ -12,22 +12,15 @@ import OrderModal from './OrderModal';
 import Loading from './Loading';
 
 const OrdersPreview = observer(({ orderItem, admin = false, all=false }) => {
-    const { user, order, item } = useContext(Context);
+    const { user, order, item,paths } = useContext(Context);
     const navigate = useNavigate();
     const { toast, showToast } = useToast();
     const [showModal, setShowModal] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isOverflowing, setIsOverflowing] = useState(false);
-
+    const location=useLocation();
     const textRef = useRef(null);
-
-    useEffect(() => {
-        if (!admin) {
-            fetchOneItem(orderItem.itemId)
-                .then(data => data && item.setItems(data))
-                .catch(err => console.error("Ошибка при получении item:", err));
-        }
-    }, [orderItem.itemId]);
+    //console.log(orderItem.item.name)
 
     useEffect(() => {
         const el = textRef.current;
@@ -43,6 +36,7 @@ const OrdersPreview = observer(({ orderItem, admin = false, all=false }) => {
 
     const handleCardClick = (e) => {
         if (e.target.tagName === "BUTTON" || e.target.closest("button") || showModal) return;
+        paths.push(location.pathname)
         navigate(ITEM_ROUTE + '/' + orderItem.item.id);
     };
 
@@ -109,7 +103,7 @@ const OrdersPreview = observer(({ orderItem, admin = false, all=false }) => {
     return (
         <Card
             key={orderItem.id}
-            className="m-2"
+            className="mt-1 mb-2 d-flex flex-column flex-md-row align-items-center"
             style={{
                 minWidth: 300,
                 maxWidth: 800,
@@ -123,9 +117,11 @@ const OrdersPreview = observer(({ orderItem, admin = false, all=false }) => {
             border="dark"
             onClick={handleCardClick}
         >
-            <div className="d-flex w-100 p-2">
+           <div className="d-flex flex-row flex-md-row w-100 p-2">
+
                 {/* Картинка */}
                 <div className="d-flex flex-column" style={{ flexShrink: 0 }}>
+                {orderItem?.item?.imgs?.length > 0 && (
                 <Image
                     src={process.env.REACT_APP_API_URL + orderItem.item.imgs[0].img}
                     style={{
@@ -136,6 +132,8 @@ const OrdersPreview = observer(({ orderItem, admin = false, all=false }) => {
                         objectPosition: 'center center'
                     }}
                 />
+            )}
+
 
 
                     <div className="d-flex justify-content-between align-items-center mt-2">
@@ -181,7 +179,7 @@ const OrdersPreview = observer(({ orderItem, admin = false, all=false }) => {
                         </Button>
                     </div>
                 </div>
-
+                
                 {/* Текст и остальная инфа */}
                 <div className="d-flex flex-column ms-3 flex-grow-1">
                     <div className="fw-bold">{orderItem.item.name+" - "+orderItem.item.price} BYN</div>

@@ -1,5 +1,8 @@
 const uuid = require('uuid');
 const path = require('path');
+const sequelize = require('../db');
+const { Op } = require('sequelize');
+
 const fs = require('fs');
 const { Item,ItemInfo, BasketItem,ItemImage,Type,Color,Order,ColorItemConnector  } = require('../models/models');
 const ApiError = require('../error/ApiError');
@@ -83,14 +86,19 @@ class ItemController {
             }
             
             // Возврат полного объекта
-            const fullItem = await Item.findOne({
-                where: { id: item.id },
-                include: [
-                    { model: ItemInfo, as: 'info' },
-                    { model: ItemImage, as: 'imgs' },
-                    { model: Color, as: 'colors' }
-                ]
-            });
+        const fullItem = await Item.findOne({
+            where: { id: item.id },
+            include: [
+                { model: ItemInfo, as: 'info' },
+                { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+                { model: Color, as: 'colors' }
+            ]
+        });
     
             return res.json(fullItem);
     
@@ -148,13 +156,18 @@ class ItemController {
     
             // Запрос для возврата item с info и ItemImage
             const fullItem = await Item.findOne({
-                where: { id: itemId },
-                include: [
-                    { model: ItemInfo, as: 'info' }, // Ассоциация info
-                    { model: ItemImage, as: 'imgs' }, // Ассоциация imgs
-                    { model: Color, as: 'colors' }
-                ]
-            });
+            where: { id: item.id },
+            include: [
+                { model: ItemInfo, as: 'info' },
+                { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+                { model: Color, as: 'colors' }
+            ]
+        });
     
             // Возвращаем полный объект с изображениями и инфо
             return res.json(fullItem);
@@ -207,48 +220,103 @@ class ItemController {
         }
     }
     
-    
-    async getAll(req, res, next) {
-        try {
-            let { typeId, limit, page } = req.query;
-    
-            // Устанавливаем значения по умолчанию для пагинации
-            page = page || 1;
-            limit = limit || 10;
-            let offset = (page - 1) * limit;
-    
-            // Опции для получения данных с использованием ассоциаций
-            const options = {
-                limit, 
-                offset,
-                distinct: true, // Уникальный подсчёт записей
-                include: [
-                    { model: ItemInfo, as: 'info', required: false }, // Включаем данные info
-                    { model: ItemImage, as: 'imgs', required: false }, // Включаем данные imgs
-                    { model: Color, as: 'colors', required: false  }
-                ]
-            };
-    
-            if (typeId) {
-                // Добавляем условие фильтрации по typeId
-                options.where = { typeId };
-            }
-    
-            // Получаем предметы с подсчётом общего количества
-            const items = await Item.findAndCountAll(options);
-    
-            // Проверяем наличие данных
-            if (!items.rows.length) {
-                return res.json({ count: 0, rows: [] }); // Если данных нет
-            }
-    
-            return res.json(items);
-        } catch (e) {
-            // Ловим и возвращаем ошибки
-            next(ApiError.badRequest(e.message));
+
+async getAll(req, res, next) {
+    try {
+        let {
+            typeId,
+            colors,
+            minPrice,
+            maxPrice,
+            page = 1,
+            limit = 10,
+            query
+        } = req.query;
+            console.log("typeId[0]?.name\n\n\n"+colors+"\n\n\n")
+
+        // Преобразуем typeId и colors в массивы, если они пришли как строки с запятыми
+        if (typeId) {
+            typeId = Array.isArray(typeId) ? typeId : typeId.split(',').map(id => parseInt(id));
+        } else {
+            typeId = []; // Если нет typeId, делаем пустым массивом
         }
+
+        if (colors) {
+            console.log('Received colors:', colors);
+            colors = Array.isArray(colors) ? colors : colors.split(',').map(id => parseInt(id));
+        } else {
+            colors = []; // Если нет colors, делаем пустым массивом
+        }
+
+
+        // Преобразуем page и limit в числа
+        page = parseInt(page);
+        limit = parseInt(limit);
+        const offset = (page - 1) * limit;
+
+        const where = {}; // Создаём пустой объект для фильтрации
+
+        // Обрабатываем параметры фильтров
+        if (typeId.length > 0) {
+            where.typeId = { [Op.in]: typeId }; // Фильтрация по типам (массив)
+        }
+
+        if (minPrice) {
+            where.price = { ...where.price, [Op.gte]: parseFloat(minPrice) };
+        }
+
+        if (maxPrice) {
+            where.price = { ...where.price, [Op.lte]: parseFloat(maxPrice) };
+        }
+
+        if (query) {
+            where.name = { [Op.iLike]: `%${query}%` }; // Поиск по имени
+        }
+
+        // Опции для запроса в базу данных
+        const options = {
+            where,
+            limit,
+            offset,
+            distinct: true, // Для корректного подсчёта с include
+            include: [
+                { model: ItemInfo, as: 'info', required: false },
+               { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+            ]
+        };
+
+        // Добавляем фильтр по цвету, если он задан
+        if (colors.length > 0) {
+            options.include.push({
+                model: Color,
+                as: 'colors',
+                where: { id: { [Op.in]: colors } }, // Фильтрация по массиву цветовых ID
+                through: { attributes: [] }, // Убираем лишние поля из связующей таблицы
+                required: true
+            });
+        } else {
+            options.include.push({
+                model: Color,
+                as: 'colors',
+                required: false,
+                through: { attributes: [] }
+            });
+        }
+
+        // Получаем все товары по заданным фильтрам
+        const items = await Item.findAndCountAll(options);
+
+        return res.json(items); // Отправляем результаты
+    } catch (e) {
+        next(ApiError.badRequest(e.message)); // В случае ошибки, отправляем ошибку
     }
-    
+}
+
     async getOne(req, res, next) {
         try {
             const { id } = req.params;
@@ -260,7 +328,12 @@ class ItemController {
                 where: { id },
                 include: [
                     { model: ItemInfo, as: 'info' }, // Включаем связанные данные info
-                    { model: ItemImage, as: 'imgs' }, // Включаем связанные данные imgs
+                   { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                }, // Включаем связанные данные imgs
                     { model: Color, as: 'colors' }
                 ]
             });
@@ -327,85 +400,140 @@ class ItemController {
             next(ApiError.internal("Ошибка при удалении товара: " + e.message));
         }
     }
-    
-
-
-    
 
     async updateItem(req, res, next) {
+        const t = await sequelize.transaction();
+        let fileRecords = []; // Новые файлы
+        let filesToDelete = []; // Старые файлы (удалим только после успеха)
+       
         try {
-            const { itemId, name, price, rating, typeId, info } = req.body; // Получаем параметры из тела запроса
+            const itemId = req.params.id;
+            if (!itemId) throw new Error("Не указан ID товара");
     
-            // Проверяем наличие itemId
-            if (!itemId) {
-                return next(ApiError.badRequest("Предмет не передан"));
+            const existingItem = await Item.findByPk(itemId, { transaction: t });
+            if (!existingItem) throw new Error("Товар не найден");
+    
+            let { name, price, typeId, info, colorIds, oldImg } = req.body;
+            let img = req.files?.img;
+            if (!name) return next(ApiError.light("Введите название товара"));
+            if (!price) return next(ApiError.light("Введите цену товара"));
+            // Обработка изображений
+            oldImg = oldImg ? JSON.parse(oldImg) : [];
+            const oldImages = await ItemImage.findAll({ where: { itemId }, transaction: t });
+    
+            // Считаем количество изображений для сохранения
+            const newImgCount = img ? (Array.isArray(img) ? img.length : 1) : 0;
+            const oldImgCount = oldImg.length;
+    
+            // Если нет ни одного изображения, выбрасываем ошибку
+            if (oldImgCount + newImgCount === 0) {
+                throw new Error("Хотя бы одно изображение должно быть прикреплено");
             }
-            const type= await Type.findOne({where:{typeId}})
-            if(!type){
-                return next(ApiError.badRequest("Нет такого типа"));
-            }
-            // Находим Item в базе данных
-            const item = await Item.findOne({
-                where: { id: itemId },
-                include: [
-                    { model: ItemInfo, as: 'info' }, // Включаем ItemInfo
-                    { model: ItemImage, as: 'img' },
-                    { model: Color, as: 'colors' }
-                    
-                ]
-                
+    
+            // Делаем Set для старых изображений, которые нужно оставить
+            const imagesToKeep = new Set(oldImg); // храним только имена файлов
+            const imagesToDelete = oldImages.filter(({ img }) => !imagesToKeep.has(img));
+            filesToDelete = imagesToDelete.map(({ img }) => path.resolve(__dirname, '..', 'static', img));
+    
+            // Удалим из БД только те изображения, которых нет в сохранённых
+            await ItemImage.destroy({
+                where: {
+                    itemId,
+                    img: imagesToDelete.map(i => i.img)
+                },
+                transaction: t
             });
     
-            if (!item) {
-                return next(ApiError.badRequest("Предмет не найден не найден"));
-            }
+            // Добавим новые изображения
+            if (img) {
+                if (!Array.isArray(img)) img = [img];
+                for (const image of img) {
+                    const fileName = uuid.v4() + ".png";
+                    const filePath = path.resolve(__dirname, '..', 'static', fileName);
+                    await image.mv(filePath);
+                    fileRecords.push(filePath);
     
-            // Обновляем данные Item, если указаны параметры
-            const updatedFields = {};
-            if (name) updatedFields.name = name;
-            if (price) updatedFields.price = price;
-            if (rating) updatedFields.rating = rating;
-            if (typeId) updatedFields.typeId = typeId;
-    
-            await Item.update(updatedFields, { where: { id: itemId } });
-
-            if (info && Array.isArray(info)) {
-                for (const itemInfo of info) {
-                    const { id, title, discription } = itemInfo;
-    
-                    if (id) {
-                        // Обновляем существующую запись в ItemInfo
-                        await ItemInfo.update(
-                            { title, discription },
-                            { where: { id } }
-                        );
-                    } else {
-                        // Создаём новую запись в ItemInfo
-                        await ItemInfo.create({
-                            title,
-                            discription,
-                            itemId
-                        });
-                    }
+                    await ItemImage.create({ img: fileName, itemId }, { transaction: t });
                 }
             }
     
-            // Запрос для возврата item с info и ItemImage
-            const fullItem = await Item.findOne({
-                where: { id: itemId },
-                include: [
-                    { model: ItemInfo, as: 'info' }, // Ассоциация с ItemInfo
-                    { model: ItemImage, as: 'imgs' }, // Ассоциация с ItemImage
-                    { model: Color, as: 'colors' }
-                ]
+            // Обработка основных данных
+            if (name) existingItem.name = name;
+            if (price) existingItem.price = price;
+            if (typeId) {
+                const type = await Type.findOne({ where: { id: typeId }, transaction: t });
+                if (!type) throw new Error("Тип товара не найден");
+                existingItem.typeId = type.id;
+            }
+            await existingItem.save({ transaction: t });
+    
+            // Обработка описания
+            if (info) {
+                const parsed = JSON.parse(info);
+                await ItemInfo.destroy({ where: { itemId }, transaction: t });
+    
+                await Promise.all(parsed.map(i => {
+                    if (i.title && i.discription) {
+                        return ItemInfo.create({
+                            title: i.title,
+                            discription: i.discription,
+                            itemId
+                        }, { transaction: t });
+                    } else {
+                        throw new Error("Укажите Заголовок и Содержание");
+                    }
+                }));
+            }
+    
+            // Обновление цветов
+            if (colorIds) {
+                const parsed = JSON.parse(colorIds);
+                await ColorItemConnector.destroy({ where: { itemId }, transaction: t });
+    
+                await Promise.all(parsed.map(colorId =>
+                    ColorItemConnector.create({ itemId, colorId }, { transaction: t })
+                ));
+            }
+    
+            await t.commit();
+    
+            // Удаляем ненужные файлы
+            filesToDelete.forEach(fp => {
+                if (fs.existsSync(fp)) fs.unlinkSync(fp);
             });
     
-            // Возвращаем полный объект с изображениями и инфо
+            const fullItem = await Item.findOne({
+            where: { id: itemId },
+            include: [
+                { model: ItemInfo, as: 'info' },
+                { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+                { model: Color, as: 'colors' }
+            ]
+        });
+    
             return res.json(fullItem);
+    
         } catch (e) {
-            next(ApiError.badRequest(e.message));
+            if (t) await t.rollback();
+    
+            fileRecords.forEach(fp => {
+                if (fs.existsSync(fp)) fs.unlinkSync(fp);
+            });
+    
+            return next(ApiError.light("Ошибка: " + e.message));
+        } finally {
+            filesToDelete.forEach(fp => {
+                if (fs.existsSync(fp)) fs.unlinkSync(fp);
+            });
         }
     }
+    
+    
 
 //colors
 async addColor(req, res, next) {
@@ -435,11 +563,14 @@ async addColor(req, res, next) {
            
 
             include: [
-                { model: ItemInfo, as: 'info' }, // Ассоциация info
-                { model: ItemImage, as: 'imgs' }, // Ассоциация imgs
-                { model: Color, as: 'colors', 
-                    //through: { attributes: [] } 
-                }    // Ассоциация colors
+                { model: ItemInfo, as: 'info' },
+                { 
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+                { model: Color, as: 'colors' }
             ]
             
         });
@@ -475,13 +606,14 @@ async removeColor(req, res, next) {
         const fullItem = await Item.findOne({
             where: { id: itemId },
             include: [
-                { model: ItemInfo, as: 'info' }, // Ассоциация info
-                { model: ItemImage, as: 'imgs' }, // Ассоциация imgs
+                { model: ItemInfo, as: 'info' },
                 { 
-                    model: Color, 
-                    as: 'colors',
-                    //through: { attributes: [] } // Исключаем промежуточную таблицу
-                }
+                    model: ItemImage, 
+                    as: 'imgs',
+                    separate: true, // сортировка работает только при separate
+                    order: [['id', 'ASC']]
+                },
+                { model: Color, as: 'colors' }
             ]
         });
 

@@ -29,7 +29,7 @@ const ItemPreveiw = observer(({ item }) => {
         
         <Card 
             key={item.id} 
-            className="m-3" 
+            className="m-2" 
             style={{ 
                 minWidth: 250, 
                 minHeight: 350, 

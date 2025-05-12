@@ -31,7 +31,7 @@ const Shop = observer(() => {
         console.log("ID=",user.user.id,"IsAuth",user.isAuth)
     return (
         <Container style={{ paddingTop: '80px' }}>
-            {isSelectedType ? (
+            {isSelectedType||item.isSearchFilled ? (
                 <>
                     <ItemsList type={item.selectedType} />
                     <Pages item={item}/>

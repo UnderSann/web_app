@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useContext,useRef } from 'react';
+import React, { useState, useEffect, useContext,useRef,useParams } from 'react';
 import { Container, Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { Context } from '..';
 import { observer } from 'mobx-react-lite';
-import { fetchColors, fetchTypes, createItem, createColor,createType,deleteColor,deleteType,deleteItem } from '../https/itemAPI'; // тебе нужно реализовать API
+import { fetchColors, fetchTypes, createItem, createColor,createType,deleteColor,deleteType,deleteItem,updateItem,fetchOneItem } from '../https/itemAPI'; // тебе нужно реализовать API
 import { Plus, Trash } from 'react-bootstrap-icons';
 import { useToast, UpWindowMessage } from '../components/UpWindowMessage';
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ConfirmModal from './ConfirmModal'
-const AddItemAdministrator = observer(() => {
+
+const AddItemAdministrator = observer(({ isEdit = false, onClose }) => {
     const { item,error } = useContext(Context);
     const { toast, showToast } = useToast();
     const fileInputRef = useRef(null);
-
+    
+    const isEditMode = Boolean(isEdit);
     const [currentIndex, setCurrentIndex] = useState(0);
 
     const textAreaRef = useRef(null);
@@ -30,39 +32,59 @@ const AddItemAdministrator = observer(() => {
     const [newTypeName, setNewTypeName] = useState('');
     const [newTypeId, setNewTypeId] = useState('');
 
+
     const [showConfirm, setShowConfirm] = useState(false);
     const [confirmData, setConfirmData] = useState({
-    title: '',
-    message: '',
-    onConfirm: () => {},
-});
+        title: '',
+        message: '',
+        onConfirm: () => {},
+    });
 
       
+    const [isEdited, setIsEdited] = useState(false); // Для отслеживания изменений
+
+
     useEffect(() => {
-        fetchColors().then(data => setAvailableColors(data));
-        fetchTypes().then(data => setAvailableTypes(data));
-    }, []);
+        fetchColors().then(setAvailableColors);
+        fetchTypes().then(setAvailableTypes);
+
+        if (isEditMode) {
+            const selected = item.items;
+            setName(selected.name || '');
+            setPrice(selected.price || '');
+            setSelectedType(selected.typeId || '');
+            setColors(selected.colors?.map(c => c.id) || []);
+            
+            setInfo(selected.info?.map(i => ({ ...i, number: Date.now() + Math.random() })) || []);
+            setFiles(selected.imgs.map(img => ({ img: img.img, id: img.id })) || []);
+        }
+    }, [isEditMode]);
 
     const addInfo = () => {
         setInfo([...info, { title: '', discription: '', number: Date.now() }]);
+        setIsEdited(true); // Отметим, что есть изменения
     };
 
     const changeInfo = (key, value, number) => {
         setInfo(info.map(i => i.number === number ? { ...i, [key]: value } : i));
+        setIsEdited(true); // Отметим, что есть изменения
     };
 
     const removeInfo = (number) => {
         setInfo(info.filter(i => i.number !== number));
+        setIsEdited(true); // Отметим, что есть изменения
     };
 
-
+    const handleEditChange = () => {
+        setIsEdited(true);
+    };
     
     
     // Обновлённая функция выбора файлов
     const selectFiles = e => {
         const newFiles = Array.from(e.target.files);
         const validImages = [];
-    
+        setIsEdited(true);
         for (const file of newFiles) {
             if (!file.type.startsWith('image/')) {
                 showToast(`Файл "${file.name}" не является изображением`,'danger');
@@ -86,23 +108,36 @@ const AddItemAdministrator = observer(() => {
         e.target.value = '';
     };
     
-    const removeFile = (index) => {
-        const newFiles = files.filter((_, i) => i !== index);
-    
-        // Обновим currentIndex:
-        // - если удалённый был последним и currentIndex > 0, уменьшим индекс
-        // - иначе оставим как есть
-        const newIndex = currentIndex >= newFiles.length && currentIndex > 0
-            ? currentIndex - 1
-            : currentIndex;
-    
-        setFiles(newFiles);
-        setCurrentIndex(newIndex);
+    // Функция для удаления картинки с подтверждением
+    const removeFile = (index, isUploaded) => {
+        if (isUploaded) {
+            // Если это изображение, загруженное с предмета
+            setConfirmData({
+                title: 'Удаление изображения',
+                message: 'Вы уверены, что хотите удалить это изображение?',
+                onConfirm: () => {
+                    const newFiles = files.filter((_, i) => i !== index);
+                    setFiles(newFiles);
+                    setIsEdited(true); // Отмечаем, что были изменения
+                    setShowConfirm(false);
+                }
+                
+            });
+            setShowConfirm(true);
+            
+        } else {
+            // Если это изображение, добавленное через форму
+            const newFiles = files.filter((_, i) => i !== index);
+            setFiles(newFiles);
+            setIsEdited(true); // Отмечаем, что были изменения
+        }
+        
     };
-    
+       
     
 
     const toggleColor = (id) => {
+        setIsEdited(true);
         if (colors.includes(id)) {
             setColors(colors.filter(c => c !== id));
         } else {
@@ -138,26 +173,34 @@ const AddItemAdministrator = observer(() => {
         }
     };
 
-    const createNewItem = () => {
-        const formData = new FormData();
-        formData.append('name', name);
-        formData.append('price', `${price}`);
-        
-        // Добавляем все изображения как массив файлов
-        files.forEach(file => formData.append('img', file));  // Каждое изображение добавляется в массив 'img'
-        
-        // Добавляем информацию о товаре
-        formData.append('info', JSON.stringify(info));
-        
-        // Передаем массивы цветов и типов как JSON
-        formData.append('colorIds', JSON.stringify(colors));
-        formData.append('typeId', selectedType); 
-        
-        // Отправляем на сервер
-        createItem(formData)
-            .then(() => {
-                showToast('Товар успешно добавлен','success');
-                // Очищаем форму после успешного добавления товара
+   // Функция сохранения
+   const handleSave = () => {
+    
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('price', `${price}`);
+    files.forEach((file, index) => {
+        formData.append('img', file); // всё правильно
+    });
+    formData.append('oldImg', JSON.stringify(
+        files
+            .filter(f => !f.name) // Это старые, уже сохранённые
+            .map(f => f.img) // Только имя файла
+    ));
+    
+    formData.append('info', JSON.stringify(info));
+    formData.append('colorIds', JSON.stringify(colors));
+    formData.append('typeId', selectedType);
+
+    const request = isEditMode
+        ? updateItem(item.items.id, formData)
+        : createItem(formData);
+
+        request
+        .then(() => {
+            setIsEdited(false);
+            showToast(isEditMode ? 'Товар обновлён' : 'Товар добавлен', 'success');
+            if (!isEditMode) {
                 setName('');
                 setPrice('');
                 setFiles([]);
@@ -165,9 +208,14 @@ const AddItemAdministrator = observer(() => {
                 setColors([]);
                 setTypes([]);
                 setSelectedType('');
-            })
-            .catch(err => console.error(err));
-    };
+                
+            }
+           // if (onClose) onClose(); // <-- Закрываем окно
+        })
+    
+        .catch(err => showToast(err.response?.data?.message || 'Ошибка при сохранении', 'danger'));
+};
+
     const handleDeleteColor = (id) => {
         const color = availableColors.find(c => c.id === id);
         setConfirmData({
@@ -188,8 +236,6 @@ const AddItemAdministrator = observer(() => {
         });
         setShowConfirm(true);
     };
-    
-    
     const handleDeleteType = (id) => {
         const type = availableTypes.find(t => t.id === id);
         setConfirmData({
@@ -213,11 +259,29 @@ const AddItemAdministrator = observer(() => {
     };
     
     
+    // Подтверждение выхода при изменениях
+    const handleExitConfirmation = () => {
+        if (isEdited) {
+            setConfirmData({
+                title: 'Подтверждение выхода',
+                message: 'Вы не сохранили изменения. Вы уверены, что хотите выйти?',
+                onConfirm: () => {
+                    setShowConfirm(false);
+                    if (onClose) onClose(); // Закрытие окна
+                }
+            });
+            setShowConfirm(true);
+        } else if (onClose) {
+            onClose();
+        }
+    };
+
     
 
     return (
         <Container className="d-flex flex-column" style={{ maxWidth: '800px',paddingBottom: '40px' }}>
-            <h2 className="my-4">Добавить новый товар</h2>
+            
+            <h2 className="my-4">{!isEditMode?"Добавить новый товар":"Редактирование товара"}</h2>
 
             {/* Название */}
             <Form.Group className="mb-3">
@@ -254,7 +318,7 @@ const AddItemAdministrator = observer(() => {
                         name="productType"
                         label={type.name}
                         checked={selectedType === type.id}
-                        onChange={() => setSelectedType(type.id)}
+                        onChange={() => {setSelectedType(type.id);  setIsEdited(true);}}
                     />
                     <Button 
                         variant="outline-danger" 
@@ -347,6 +411,7 @@ const AddItemAdministrator = observer(() => {
                         onChange={selectFiles} 
                     />
                 </div>
+            
 
                 {files.length > 0 && (
                     <Row className="g-3">
@@ -354,7 +419,10 @@ const AddItemAdministrator = observer(() => {
                             <Col xs={6} md={4} lg={3} key={idx}>
                                 <div className="position-relative border rounded p-1">
                                     <img 
-                                        src={URL.createObjectURL(file)} 
+                                        src={file instanceof File
+                                            ? URL.createObjectURL(file)
+                                            : `${process.env.REACT_APP_API_URL}/${file.img}`
+                                          }
                                         alt={`Файл ${idx}`} 
                                         style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '4px' }} 
                                     />
@@ -429,10 +497,14 @@ const AddItemAdministrator = observer(() => {
                         <h5>Добавленные изображения</h5>
                         <div className="border rounded p-2 text-center" style={{ maxWidth: '400px' }}>
                         <img
-                            src={URL.createObjectURL(files[currentIndex])}
+                            src={files[currentIndex] instanceof File
+                                ? URL.createObjectURL(files[currentIndex])
+                                : `${process.env.REACT_APP_API_URL}/${files[currentIndex].img}`
+                            }
                             alt={`Изображение ${currentIndex + 1}`}
                             style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
-                        />
+                            />
+
                         <div className="mt-2" style={{ fontSize: '0.9rem' }}>
                             {files[currentIndex].name} ({currentIndex + 1} из {files.length})
                         </div>
@@ -493,9 +565,15 @@ const AddItemAdministrator = observer(() => {
             </Card>
 
             {/* Кнопка создания */}
-            <Button variant="success" size="lg" onClick={createNewItem}>
-                Создать товар
+            <Button onClick={handleSave} variant="success">
+                {isEditMode ? 'Сохранить изменения' : 'Добавить товар'}
             </Button>
+            {isEditMode && (
+                <Button variant="secondary" className="mt-2" onClick={handleExitConfirmation}>
+                    Закрыть
+                </Button>
+            )}
+
              <UpWindowMessage toast={toast} />
              <ConfirmModal
                 show={showConfirm}
@@ -503,8 +581,9 @@ const AddItemAdministrator = observer(() => {
                 message={confirmData.message}
                 onConfirm={confirmData.onConfirm}
                 onCancel={() => setShowConfirm(false)}
-                />
+            />
 
+            
         </Container>
     );
 });

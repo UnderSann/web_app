@@ -9,69 +9,128 @@ import ItemPreveiw_2 from './ItemPreveiw_2';
 import { fetchTypes, fetchItems } from '../https/itemAPI';
 import { ArrowLeft } from 'react-bootstrap-icons';
 import { SHOP_ROUTE, LOGIN_ROUTE } from '../utils/consts';
-import Loading from './Loading'
+import Loading from './Loading';
+
 const ItemsList = observer(({ type }) => {
     const { item } = useContext(Context);
     const isMobile = window.innerWidth < 768;
     const [loadingItems, setLoadingItems] = useState(true);
-    let navigate=useNavigate()
-    const toMain = () => {
-        item.setSelectedType({})
-        navigate(process.env.REACT_APP_MAIN_PAGE)
-    }
-    let paramType
-    if (type.id === -1) { 
-        paramType=undefined
-    } else {
-        paramType=type.id
-    }
-    useEffect(() => {
-        setLoadingItems(true);
-        fetchItems(paramType, item.page, item.limit).then(data => {
-            item.setItems(data.rows);
-            item.setTotalCount(data.count);
-        }).finally(() => setLoadingItems(false));
-    }, [item.page, item.selectedType]);
+    const navigate = useNavigate();
+
+    const location = useLocation();
+
     
 
+    //const page = parseInt(params.get('page')) || 1; // Страница
+    //const limit = parseInt(params.get('limit')) || 10; // Лимит
 
+    // Функция для обновления параметров в URL
+    const updateUrlParams = (paramsObj) => {
+        const query = new URLSearchParams(paramsObj).toString();
+        navigate(`?${query}`, { replace: true }); // Обновляем адресную строку
+    };
+       
+    // Эффект для получения и фильтрации товаров при изменении параметров
+    useEffect(() => {
+  setLoadingItems(true);
+
+  const params = new URLSearchParams(location.search);
+
+const typeIdRaw = params.get('typeId');
+
+    if (!typeIdRaw) {
+        //console.log("⏭ Пропускаем запрос, typeId отсутствует в URL");
+        return;
+    }
+const colorsRaw = params.get('colors');
+
+const typeId = typeIdRaw
+  ? typeIdRaw
+      .split(',')
+      .map(Number)
+      .filter(n => !isNaN(n) && n !== 0)  // Отфильтровываем 0 и NaN
+  : null;
+
+const typeIdWithNulls = typeId.length > 0 ? typeId : null;  // Если массив пуст, записываем null
+
+  const colors = colorsRaw ? colorsRaw
+  .split(',')
+  .map(Number)
+  .filter(n => !isNaN(n)) : null;
+
+  const minPrice = params.get('minPrice');
+  const maxPrice = params.get('maxPrice');
+  const searchQuery = params.get('search');
+
+const filters = {
+  typeId,
+  colors,
+  minPrice: minPrice ? parseFloat(minPrice) : null,
+  maxPrice: maxPrice ? parseFloat(maxPrice) : null,
+  query: searchQuery,
+  page: item.page,
+  limit: item.limit
+};
+
+
+  console.log('FILTERS:', filters); 
+fetchItems(filters)
+    .then(data => {
+      item.setItems(data.rows);
+      item.setTotalCount(data.count);
+    })
+    .finally(() => setLoadingItems(false));
+}, [item.page, item.limit, location.search, item.isSearchFilled]);
+
+
+    // Загрузка данных
     if (loadingItems) {
-        return (
-            <Loading/>
-        );
+        return <Loading />;
     }
 
-    let allItems = item.items;
-    /*
-    allItems.map(item => (
-            console.log("<<KK>>:"+item.colors.length)))
-*/
+
+
     return (
         <>
-        <ArrowLeft 
-            className="position-fixed start-0 top-30 m-2 translate-middle-y z-3"
-            style={{ marginLeft:10, 
-                marginTop:20, 
-                width:30,
-                height:30,
-            }} 
-            onClick={() => toMain()}
-        />
-        <Row className="d-flex justify-content-center"
-            style={{ marginTop: isMobile ? '20px' : '5px' ,
-                padding: '0 5px' }}
-        >
-            {allItems.length > 0 ?
-                allItems.map(item => (
-                    
-                    <ItemPreveiw_2 Item={item} isBasket={false} key={item.id} />
-                ))
-                : (
-                    <div className="p-3 text-muted">
-                        В настоящее время нет такого товара
-                    </div>
-                )}
-        </Row>
+            <ArrowLeft
+                className="position-fixed start-0 translate-middle-y z-3"
+                style={{
+                    marginLeft: 0,
+                    top: 95,
+                    width: 50,
+                    height: 30,
+                    backgroundColor: "white",
+                    border: "2px solid black",
+                    borderBottomRightRadius: 10,
+                    borderBottomLeftRadius: 0,
+                    borderTopRightRadius: 10,
+                    borderTopLeftRadius: 0
+                }}
+                onClick={() => {
+                    // Очистка строки поиска
+                    item.setIsSearchFilled(false);  // Убираем флаг поиска
+                    item.setSelectedType({});      // Сбрасываем выбранный тип
+                    const params = new URLSearchParams(window.location.search);
+                    navigate(`${SHOP_ROUTE}`, { replace: true }); // Обновляем URL
+                }}
+            />
+
+            <div className="center d-flex flex-column w-100" style={{ alignItems: 'center', paddingLeft: isMobile ? '40px' : '0px' }}>
+                <h1 className="text-start" style={{ maxWidth: '800px', width: '100%' }}>
+                    {!item.isSearchFilled?item.selectedType.name:"Поиск"}
+                </h1>
+            </div>
+            <Row className="d-flex justify-content-center p-1">
+                { item.items.length > 0 ? 
+                     item.items.map(item => (
+                        <ItemPreveiw_2 Item={item} isBasket={false} key={item.id} />
+                    ))
+                    : (
+                        <div className="p-3 text-muted">
+                            В настоящее время нет такого товара
+                        </div>
+                    )}
+            </Row>
         </>
     );
 });

@@ -28,18 +28,43 @@ const Admin = observer(() => {
             navigate(paths.pop());
         }
     };
-
+    const isMobile = window.innerWidth < 768;
     return (
         <div style={{ position: 'relative', minHeight: '100vh' }}>
             <div
                 className="position-absolute w-100 d-flex justify-content-between align-items-center px-4"
                 style={{ top: '80px', left: 0, right: 0, height: '60px', zIndex: 10 }}
             >
-                <Button variant="outline-secondary" onClick={handleBack}>
-                    <ArrowLeft className="me-2" />
-                    Назад
-                </Button>
-                <h4 className="mb-0">Панель администратора</h4>
+            <ArrowLeft 
+                className="position-fixed start-0 translate-middle-y z-3"
+                style={{ 
+                    marginLeft: 0, // прижимаем к левому краю
+                    top: 95, // абсолютный отступ от верха
+                    width: 50, 
+                    height: 30, 
+                    backgroundColor: "white", // белая кнопка
+                    border: "2px solid black", // черная обводка
+                    borderBottomRightRadius: 10, // закругленный угол снизу справа
+                    borderBottomLeftRadius: 0,
+                    borderTopRightRadius: 10,
+                    borderTopLeftRadius: 0
+                }} 
+                onClick={() => handleBack()}
+            />
+
+<div className="center d-flex flex-column w-100"
+    style={{ alignItems: 'center', paddingLeft: isMobile ? '40px' : '0px' }}
+>
+    <h1
+        className={`w-100 ${view !== 'admin' ? 'text-start' : 'text-center'}`}
+        style={{
+            maxWidth: '800px',
+        }}
+    >
+        Панель администратора
+    </h1>
+</div>
+
             </div>
 
             {/* Контент строго по центру */}
@@ -66,7 +91,7 @@ const Admin = observer(() => {
                 )}   
                 {view === 'addItem' && (
                     <div className="">
-                        <AddItemAdministrator />
+                        <AddItemAdministrator isEdit={false}/>
                     </div>
                 )}
                 </div>

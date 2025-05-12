@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext,useState,useEffect } from 'react';
 import { Card, Image, Button } from 'react-bootstrap';
 import { useNavigate,useLocation } from 'react-router-dom';
 import { Context } from '..';
@@ -23,14 +23,26 @@ const ItemPreview_2 = observer(({ Item, isBasket = 0, quantity=0}) => {
         return;
         }
         paths.push(location.pathname);
-        navigate(ITEM_ROUTE + '/' + Item.id);
+        navigate(`${ITEM_ROUTE}/${Item.id}${location.search}`);
+
     };
+
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+useEffect(() => {
+  const handleResize = () => {
+    setIsMobile(window.innerWidth < 768);
+  };
+  window.addEventListener("resize", handleResize);
+  return () => window.removeEventListener("resize", handleResize);
+}, []);
+
   return (
     <Card
       key={Item.id}
-      className="m-2 d-flex flex-row align-items-center"
+      className="m-2 d-flex flex-column flex-md-row align-items-center"
       style={{
-        minWidth: 400,
+        width: '100%',
         maxWidth: 800,
         minHeight: 200,
         cursor: "pointer",
@@ -40,8 +52,8 @@ const ItemPreview_2 = observer(({ Item, isBasket = 0, quantity=0}) => {
       border="dark"
       onClick={handleCardClick}
     >
-      <div className="d-flex flex-row align-items-start w-100">
-        {/* Картинка слева */}
+    <div className="d-flex flex-md-row align-items-start w-100 pt-1 pb-1 pl-1">
+    {/* Картинка слева */}
        <Image
         src={process.env.REACT_APP_API_URL + Item.imgs[0].img}
         style={{
@@ -52,7 +64,8 @@ const ItemPreview_2 = observer(({ Item, isBasket = 0, quantity=0}) => {
             objectPosition: 'center center',
         }}
     />
-        
+        <div className={`d-flex ${isMobile ? 'flex-column' : 'flex-row'} align-items-start w-100 pt-1 pb-1 pl-1`}>
+
         {/* Блок с названием и описанием */}
         <div className="d-flex flex-column flex-grow-1 ms-3 justify-content-between">
           <div className="text-start ">{Item.name}</div>
@@ -61,7 +74,14 @@ const ItemPreview_2 = observer(({ Item, isBasket = 0, quantity=0}) => {
           </div>
         </div>
 
-        <div className="d-flex flex-column justify-content-center text-end ms-auto m-2">
+        <div
+        className={`d-flex flex-column justify-content-center text-end ${isMobile ? '' : 'm-2'} ${isMobile ? '' : 'ms-auto'}`}
+        style={{
+          width: isMobile ? '100%' : 'auto',
+          marginTop: isMobile ? '1rem' : '0',
+        }}
+      >
+
         {/* Цена сверху */}
         <div className="">{Item.price} BYN</div>
         <div className="d-flex align-items-center justify-content-end mt-2 gap-2">
@@ -87,6 +107,7 @@ const ItemPreview_2 = observer(({ Item, isBasket = 0, quantity=0}) => {
          {/* Кнопка удалить (мусорка) */}
          <CartButton item={Item} isBasket={isBasket} addToCart={addToCart} deleteFromCart={deleteFromCart}/>
          </div>
+      </div>
       </div>
       </div>
       <UpWindowMessage toast={toast} />

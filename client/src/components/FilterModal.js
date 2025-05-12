@@ -3,6 +3,7 @@ import { Modal, Button, Card, Form, Row, Col } from 'react-bootstrap';
 import { fetchColors, fetchTypes } from '../https/itemAPI';
 import { useNavigate } from 'react-router-dom';
 import { Context } from '..';
+import { SHOP_ROUTE } from '../utils/consts';
 
 const FilterModal = ({ show, handleClose }) => {
   const { item } = useContext(Context);
@@ -14,17 +15,35 @@ const FilterModal = ({ show, handleClose }) => {
   const [maxPrice, setMaxPrice] = useState('');
   const navigate = useNavigate();
 
+useEffect(() => {
+  if (show) {
+    const params = new URLSearchParams(window.location.search);
+    const typesFromParams = params.get('typeId')?.split(',').map(Number).filter(n => !isNaN(n) && n !== 0) || [];
+    const colorsFromParams = params.get('colors')?.split(',').map(Number).filter(n => !isNaN(n)) || [];
+    const min = params.get('minPrice') || '';
+    const max = params.get('maxPrice') || '';
+
+    setSelectedTypes(typesFromParams);
+    setSelectedColors(colorsFromParams);
+    setMinPrice(min);
+    setMaxPrice(max);
+
+    const hasFilters = (
+      typesFromParams.length > 0 ||
+      colorsFromParams.length > 0 ||
+      min !== '' ||
+      max !== ''
+    );
+
+    item.setIsSearchFilled(hasFilters);
+  }
+}, [show]);
+
+
   useEffect(() => {
     fetchColors().then(setAvailableColors);
     fetchTypes().then(setAvailableTypes);
   }, []);
-
-  // Если isSearchFilled == false, сбрасываем все фильтры
-  useEffect(() => {
-    if (!item.isSearchFilled) {
-      clearFilters();  // Очистим фильтры, если isSearchFilled == false
-    }
-  }, [item.isSearchFilled]);
 
   const applyFilters = () => {
     const params = new URLSearchParams(window.location.search);
@@ -57,18 +76,45 @@ const FilterModal = ({ show, handleClose }) => {
     } else {
       params.delete('maxPrice');
     }
-
+    item.setPage(1)
     navigate(`?${params.toString()}`);
     handleClose();
   };
+const clearFilters = () => { 
+  setSelectedTypes([]);
+  setSelectedColors([]);
+  setMinPrice('');
+  setMaxPrice('');
+    // Очищаем все параметры фильтров
 
-  const clearFilters = () => {
-    setSelectedTypes([]);
-    setSelectedColors([]);
-    setMinPrice('');
-    setMaxPrice('');
-    item.setIsSearchFilled(false); // Зануляем состояние isSearchFilled
-  };
+  const params = new URLSearchParams();
+  params.delete('typeId');
+  params.delete('colors');
+  params.delete('minPrice');
+  params.delete('maxPrice');
+  // Устанавливаем параметр typeId как 0, если selectedType не задан
+  if (!item.selectedType && !item.isSearchFilled) {
+    item.setSelectedType({ name: "Все товары", id: null }); // Устанавливаем selectedType как 0
+    params.set('typeId', 0); // Добавляем typeId=0 в строку поиска
+    item.setIsSearchFilled(false);
+
+  }
+
+  // Добавляем другие параметры, если они есть
+  if (item.selectedType !== 0) {
+    item.setSelectedType({ name: "Все товары", id: null })
+    params.set('typeId', 0); // Пример для других значений
+    item.setIsSearchFilled(false);
+
+  }
+
+  // Навигация с обновленными параметрами
+  navigate(`${SHOP_ROUTE}?${params.toString()}`, { replace: true });
+
+  item.setIsSearchFilled(false);
+  handleClose();
+};
+
 
   const toggleType = (id) => {
     setSelectedTypes(prev =>

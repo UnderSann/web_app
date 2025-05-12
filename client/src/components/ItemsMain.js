@@ -8,18 +8,20 @@ import Loading from './Loading';
 import { useNavigate,useLocation } from 'react-router-dom';
 const ItemsMain = observer(() => {
     const { item } = useContext(Context);
-    const [loadingItems, setLoadingItems] = useState(true);
+    const [loadingItems, setLoadingItems] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
     const params = new URLSearchParams(location.search);
     useEffect(() => {
+        console.log("EFFECT")
         setLoadingItems(true);
-        
+
         // Обрабатываем null или undefined для параметра typeId
         const typeId = null; // Для всех товаров передаем null
 
         fetchItems({typeId,page:1, limit:(item.onMain + 1)})
             .then(data => {
+                
                 item.setItems(data.rows);
                 item.setTotalCount(data.count);
             })
@@ -28,7 +30,7 @@ const ItemsMain = observer(() => {
             })
             .finally(() =>( setLoadingItems(false)));
     
-    }, [item.onMain]);
+    }, []);
 
     if (loadingItems) {
         return <Loading />;

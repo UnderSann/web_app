@@ -10,6 +10,8 @@ const SearchInput = () => {
   const [query, setQuery] = useState('');
   const [showFilter, setShowFilter] = useState(false);
   const navigate = useNavigate();
+    let isSelectedType = !(Object.keys(item.selectedType).length === 0);
+
   const location=useLocation()
     useEffect(() => {
     if (!item.isSearchFilled) {
@@ -18,24 +20,37 @@ const SearchInput = () => {
     }
   }, [item.isSearchFilled]);
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const params = new URLSearchParams(window.location.search);
-      if (query!=='') {
-        params.set('search', query);
-        params.set('typeId', 0);
+useEffect(() => {
+  const timeoutId = setTimeout(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    const isSearchEmpty = query.trim() === '';
+    const isTypeSelected = !!item.selectedType?.id;
+
+    if (!isSearchEmpty) {
+      params.set('search', query);
+      if (!isTypeSelected) params.set('typeId', 0);
+      item.setIsSearchFilled(true);
+    } else {
+      params.delete('search');
+
+      if (!isTypeSelected) {
+        //params.delete('typeId');
+        item.setIsSearchFilled(false);
       } else {
-        params.delete('search');
         params.set('typeId', item.selectedType.id);
         item.setIsSearchFilled(false);
       }
+    }
+
     if (location.pathname === SHOP_ROUTE) {
       navigate(`${SHOP_ROUTE}?${params.toString()}`, { replace: true });
-    item.setIsSearchFilled(true);
-    }    }, 10);
+    }
+  }, 300); // чуть больше, чтобы не спамить URL каждый миллисекундный ввод
 
-    return () => clearTimeout(timeoutId);
-  }, [query]);
+  return () => clearTimeout(timeoutId);
+}, [query, item.selectedType]);
+
   return (
     <>
       <InputGroup style={{ maxWidth: 450, flexGrow: 1 }}>

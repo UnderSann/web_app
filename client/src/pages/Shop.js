@@ -7,10 +7,13 @@ import ItemsList from '../components/ItemsList';
 import Pages from '../components/Pages';
 import { fetchTypes, fetchItems } from '../https/itemAPI';
 import Loading from '../components/Loading'
+import { useLocation } from 'react-router-dom';
 const Shop = observer(() => {
     const { item } = useContext(Context);
     const { user } = useContext(Context);
     const { basket } = useContext(Context);
+        const location = useLocation();
+
     let isSelectedType = !(Object.keys(item.selectedType).length === 0);
     const [loadingTypes, setLoadingTypes] = useState(true);
     useEffect(() => {
@@ -28,21 +31,29 @@ const Shop = observer(() => {
                 <Loading/>
             );
     }
-        console.log("ID=",user.user.id,"IsAuth",user.isAuth)
+    const params = new URLSearchParams(location.search);
+    const hasSearchParams = (
+    params.has('typeId') || // всегда учитываем наличие typeId
+    params.has('colors') ||
+    params.has('minPrice') ||
+    params.has('maxPrice') ||
+    params.has('search')
+    );
+
+    console.log("SelType=", item.selectedType.id, "\n Search", item.isSearchFilled);
+
     return (
-        <Container style={{ paddingTop: '80px' }}>
-            {isSelectedType||item.isSearchFilled ? (
-                <>
-                    <ItemsList type={item.selectedType} />
-                    <Pages item={item}/>
-                </>
-                
-            ) : (
-                <>
-                    <ItemsMain />
-                </>
-            )}
-        </Container>
+    <Container style={{ paddingTop: '80px' }}>
+       {hasSearchParams||isSelectedType||item.isSearchFilled ? (
+            <>
+            <ItemsList type={item.selectedType} />
+            <Pages item={item}/>
+            </>
+        ) : (
+            <ItemsMain />
+        )
+        }
+    </Container>
     );
 });
 

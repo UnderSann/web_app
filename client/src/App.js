@@ -44,7 +44,7 @@ useEffect(() => {
       navigate(`/error/${error.errorCode}`);
     }
   }, [error.errorCode],navigate);
-  console.log("код:"+error.errorCode+"; Cooбщение:"+error.errorMessage)
+  //console.log("код:"+error.errorCode+"; Cooбщение:"+error.errorMessage)
   if (loading) {
     return <Loading />;
   }

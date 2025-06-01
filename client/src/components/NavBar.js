@@ -20,10 +20,11 @@ const NavBar = observer(() => {
         user.setUser({});
         user.setIsAuth(false);
         localStorage.removeItem('token');
+        navigate(process.env.REACT_APP_MAIN_PAGE);
         setExpanded(false); 
         error.clearError();
-        navigate(process.env.REACT_APP_MAIN_PAGE);
-                        item.setIsSearchFilled(false);  // Убираем флаг поиска
+        item.setIsSearchFilled(false);  // Убираем флаг поиска
+        item.setIsFiltersFilled(false);
 
         
     };
@@ -31,22 +32,24 @@ const NavBar = observer(() => {
     const toMain = () => {
         item.setSelectedType({});
         //        item.setIsSearchFilled(false);  // Убираем флаг поиска
-
+        navigate(process.env.REACT_APP_MAIN_PAGE);
         setExpanded(false);
         error.clearError();
-        navigate(process.env.REACT_APP_MAIN_PAGE);
-                        item.setIsSearchFilled(false);  // Убираем флаг поиска
+        
+        item.setIsSearchFilled(false);  // Убираем флаг поиска
+                item.setIsFiltersFilled(false);
 
     };
 
     const handleNavClick = (path) => {
      //   item.setIsSearchFilled(false);  // Убираем флаг поиска
-    item.setSelectedType({});      // Сбрасываем выбранный тип
+    item.setSelectedType({}); 
+        setExpanded(false);      // Сбрасываем выбранный тип
         paths.push(location.pathname);
-        setExpanded(false); 
-        error.clearError();
         navigate(path)
-                        item.setIsSearchFilled(false);  // Убираем флаг поиска
+        error.clearError();
+        item.setIsSearchFilled(false);  // Убираем флаг поиска
+        item.setIsFiltersFilled(false);
 
     };
 
@@ -77,10 +80,10 @@ const NavBar = observer(() => {
             <Nav className="" style={{ maxHeight: '250px'  }} navbarScroll>
                 {user.isAuth ? (
                     <>
-                        <Button className="m-1" variant="outline-dark" as={NavLink} to={ORDER_ROUTE} onClick={() => handleNavClick(ORDER_ROUTE)}>
+                        <Button className="m-1" variant="outline-dark"  onClick={() => handleNavClick(ORDER_ROUTE)}>
                             Заказы
                         </Button>
-                        <Button className="m-1" variant="outline-dark" as={NavLink} to={BASKET_ROUTE} onClick={() => handleNavClick(BASKET_ROUTE)}>
+                        <Button className="m-1" variant="outline-dark"  onClick={() => handleNavClick(BASKET_ROUTE)}>
                             <Cart />
                         </Button>
                         {user.user.role === 'ADMIN' && (

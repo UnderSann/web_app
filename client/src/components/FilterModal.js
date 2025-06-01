@@ -1,12 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Modal, Button, Card, Form, Row, Col } from 'react-bootstrap';
 import { fetchColors, fetchTypes } from '../https/itemAPI';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useLocation } from 'react-router-dom';
 import { Context } from '..';
 import { SHOP_ROUTE } from '../utils/consts';
 
 const FilterModal = ({ show, handleClose }) => {
-  const { item } = useContext(Context);
+  const { item, paths } = useContext(Context);
+
   const [availableColors, setAvailableColors] = useState([]);
   const [availableTypes, setAvailableTypes] = useState([]);
   const [selectedTypes, setSelectedTypes] = useState([]);
@@ -14,12 +15,27 @@ const FilterModal = ({ show, handleClose }) => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const navigate = useNavigate();
-
+  const location=useLocation()
+  const updateSearchParams = (updates = {}) => {
+  const params = new URLSearchParams(window.location.search);
+  Object.entries(updates).forEach(([key, value]) => {
+    if (value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
+      params.delete(key);
+    } else {
+      params.set(key, Array.isArray(value) ? value.join(',') : value);
+    }
+  });
+  return params;
+};
 useEffect(() => {
   if (show) {
     const params = new URLSearchParams(window.location.search);
-    const typesFromParams = params.get('typeId')?.split(',').map(Number).filter(n => !isNaN(n) && n !== 0) || [];
-    const colorsFromParams = params.get('colors')?.split(',').map(Number).filter(n => !isNaN(n)) || [];
+    const typesFromParams = params.get('typeId')?.split(',')
+      .map(Number)
+      .filter(n => !isNaN(n) && n !== 0) || [];
+    const colorsFromParams = params.get('colors')?.split(',')
+      .map(Number)
+      .filter(n => !isNaN(n)) || [];
     const min = params.get('minPrice') || '';
     const max = params.get('maxPrice') || '';
 
@@ -35,9 +51,12 @@ useEffect(() => {
       max !== ''
     );
 
-    item.setIsSearchFilled(hasFilters);
+    // ❗ Применяем только если действительно есть фильтры
+    item.setIsFiltersFilled(hasFilters);
   }
 }, [show]);
+
+
 
 
   useEffect(() => {
@@ -45,75 +64,71 @@ useEffect(() => {
     fetchTypes().then(setAvailableTypes);
   }, []);
 
-  const applyFilters = () => {
-    const params = new URLSearchParams(window.location.search);
+// В applyFilters:
+const applyFilters = () => {
 
-    if (selectedTypes.length > 0) {
-      params.set('typeId', selectedTypes.join(','));
-      item.setIsSearchFilled(true);
-    } else {
-      params.delete('typeId');
-      params.set('typeId', 0); // Или удаляем параметр, если не выбран тип
-    }
+  const updated = updateSearchParams({
+    typeId: selectedTypes.length > 0 ? selectedTypes : null,  // убираем 0, ставим null
+    colors: selectedColors.length > 0 ? selectedColors : null,
+    minPrice: minPrice !== '' ? minPrice : null,
+    maxPrice: maxPrice !== '' ? maxPrice : null
+  });
 
-    if (selectedColors.length > 0) {
-      params.set('colors', selectedColors.join(','));
-      item.setIsSearchFilled(true);
-    } else {
-      params.delete('colors');
-    }
-
-    if (minPrice) {
-      params.set('minPrice', minPrice);
-      item.setIsSearchFilled(true);
-    } else {
-      params.delete('minPrice');
-    }
-
-    if (maxPrice) {
-      params.set('maxPrice', maxPrice);
-      item.setIsSearchFilled(true);
-    } else {
-      params.delete('maxPrice');
-    }
-    item.setPage(1)
-    navigate(`?${params.toString()}`);
-    handleClose();
-  };
-const clearFilters = () => { 
-  setSelectedTypes([]);
-  setSelectedColors([]);
-  setMinPrice('');
-  setMaxPrice('');
-    // Очищаем все параметры фильтров
-
-  const params = new URLSearchParams();
-  params.delete('typeId');
-  params.delete('colors');
-  params.delete('minPrice');
-  params.delete('maxPrice');
-  // Устанавливаем параметр typeId как 0, если selectedType не задан
-  if (!item.selectedType && !item.isSearchFilled) {
-    item.setSelectedType({ name: "Все товары", id: null }); // Устанавливаем selectedType как 0
-    params.set('typeId', 0); // Добавляем typeId=0 в строку поиска
-    item.setIsSearchFilled(false);
-
+  if (!item.isSearchFilled  && location.pathname !== SHOP_ROUTE) {
+    paths.push(location.pathname + location.search);
   }
 
-  // Добавляем другие параметры, если они есть
-  if (item.selectedType !== 0) {
-    item.setSelectedType({ name: "Все товары", id: null })
-    params.set('typeId', 0); // Пример для других значений
-    item.setIsSearchFilled(false);
+  // определяем, заполнены ли фильтры
+  const hasFilters = (
+    selectedTypes.length > 0 ||
+    selectedColors.length > 0 ||
+    minPrice !== '' ||
+    maxPrice !== ''
+  );
 
-  }
 
-  // Навигация с обновленными параметрами
-  navigate(`${SHOP_ROUTE}?${params.toString()}`, { replace: true });
-
-  item.setIsSearchFilled(false);
+  item.setIsFiltersFilled(hasFilters);
+  if(hasFilters){ 
+     item.setSelectedType(/*{ name: "Все товары", id: null }*/{ name: undefined, id: undefined });
+}
+  item.setPage(1);
+  navigate(`${SHOP_ROUTE}?${updated.toString()}`);
   handleClose();
 };
+
+
+
+const clearFilters = () => {
+  const hasFilters =
+    selectedTypes.length > 0 ||
+    selectedColors.length > 0 ||
+    minPrice !== '' ||
+    maxPrice !== '';
+
+  const updated = updateSearchParams({
+    typeId: 0,
+    colors: null,
+    minPrice: null,
+    maxPrice: null
+  });
+
+  if (hasFilters) {
+    item.setSelectedType({ name: undefined, id: undefined });
+  }
+
+  item.setIsFiltersFilled(false);
+  item.setPage(1);
+
+  const prevPath = paths.pop();
+  if (prevPath && !item.isSearchFilled) {
+    navigate(prevPath);
+  } else {
+    navigate(`${SHOP_ROUTE}?${updated.toString()}`);
+  }
+
+  handleClose();
+};
+
 
 
   const toggleType = (id) => {

@@ -15,7 +15,7 @@ export default class ItemStore {
         this._priceRange = { min: 0, max: 10000 };
         this._searchQuery = '';  // Новый параметр для хранения поискового запроса
         this._isSearchFilled = false;
-
+        this._isFiltersFilled = false;
         makeAutoObservable(this, {
             // Указываем, что эти методы — это действия (actions)
             setSearchQuery: action,
@@ -30,6 +30,7 @@ export default class ItemStore {
             setSelectedColor: action,
             setPriceRange: action,
             setIsSearchFilled: action,
+            setFiltersFilled: action,
         });
     }
 
@@ -84,12 +85,17 @@ export default class ItemStore {
     setIsSearchFilled(bool) {
         this._isSearchFilled = bool;
     }
-
+    setIsFiltersFilled(bool) {
+        this._isFiltersFilled = bool;
+    }
     get isSearchFilled() {
         this.setPage(1); // Обновляем страницу, если флаг поиска изменился
         return this._isSearchFilled;
     }
-
+    get isFiltersFilled() {
+        this.setPage(1); // Обновляем страницу, если флаг поиска изменился
+        return this._isFiltersFilled;
+    }
     get selectedColor() {
         return this._selectedColor;
     }

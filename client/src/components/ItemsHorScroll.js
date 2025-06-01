@@ -89,7 +89,18 @@ const ItemsHorScroll = observer(({ type }) => {
                 )}
                 
                 {localItems.length > item.onMain && (
-                    <Button variant="outline-dark" onClick={() => item.setSelectedType(type)} className="m-3">
+                    <Button variant="outline-dark"  onClick={() => {
+                item.setSelectedType(type);
+                const params = new URLSearchParams(window.location.search);
+                if (type.id !== null && type.id !== undefined) {
+                params.set('typeId', type.id);
+                } else {
+                params.delete('typeId'); // Удалить если "все товары"
+                params.set('typeId', 0);
+
+                }
+                navigate(`?${params.toString()}`);
+            }} className="m-3">
                         Показать больше
                     </Button>
                 )}

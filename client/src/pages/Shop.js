@@ -40,11 +40,11 @@ const Shop = observer(() => {
     params.has('search')
     );
 
-    console.log("SelType=", item.selectedType.id, "\n Search", item.isSearchFilled);
+    console.log("SelType=", item.selectedType.id, "\n Search", item.isSearchFilled, "\n Filter", item.isFiltersFilled);
 
     return (
     <Container style={{ paddingTop: '80px' }}>
-       {hasSearchParams||isSelectedType||item.isSearchFilled ? (
+       {item.isSearchFilled||item.isFiltersFilled||item.selectedType.name!==undefined ? (
             <>
             <ItemsList type={item.selectedType} />
             <Pages item={item}/>
